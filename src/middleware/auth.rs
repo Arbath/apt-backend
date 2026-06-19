@@ -1,6 +1,6 @@
 use axum::{extract::FromRequestParts, http::{request::Parts, header}};
 use chrono::Utc;
-use crate::state::AppState;
+use crate::{models::user::RoleUsers, state::AppState};
 use crate::utils::{response::*, auth::verify_access_token};
 use crate::models::{user::User, auth::CheckApiKey}; 
 
@@ -23,7 +23,7 @@ impl FromRequestParts<AppState> for AuthAdmin {
         let uri = parts.uri.clone();
         let user = fetch_user_from_request(parts, state).await.map_err(|e|e.with_path(&uri))?;
 
-        if !user.is_superuser {
+        if user.role != RoleUsers::ADMIN {
             return Err(AppError::Forbidden("Insufficient permissions: Superuser required".to_string()).with_path(&uri));
         }
 

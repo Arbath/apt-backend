@@ -1,5 +1,5 @@
 use axum::{extract::{FromRef, FromRequestParts}, http::request::Parts};
-use crate::models::user::User; 
+use crate::models::{auth::ResetPassword, user::User}; 
 use crate::repository::user::*;
 use crate::utils::auth::*; 
 use crate::models::auth::{LoginReq, LoginRes};
@@ -23,13 +23,13 @@ impl AuthService {
     
     pub async fn login(&self, req: LoginReq) -> Result<LoginRes, AppError> {
         let refresh_ttl = 60 * 60 * self.state.app_config.access_ttl;
-        let user = self.authenticate(&req.email, &req.password).await?;
+        let user = self.authenticate(&req.username, &req.password).await?;
         let expiration_time = Utc::now() + Duration::seconds(refresh_ttl as i64); 
         let access_token = gen_access_token(&user, &self.state).await?;
         let refresh_token = gen_refresh_token(&user, &self.state).await?;
         self.token_repo.save_token(&refresh_token, user.id, expiration_time).await?;
 
-        Ok(LoginRes { access_token, refresh_token })
+        Ok(LoginRes { access_token, refresh_token, user})
     }
 
     pub async fn logout(&self, refresh_token_str: String) -> Result<(), AppError> {
@@ -61,14 +61,29 @@ impl AuthService {
         self.token_repo.revoke(&token_str).await?;
         self.token_repo.save_token(&refresh_token, user_id, expiration_time).await?;
 
-        Ok(LoginRes { access_token, refresh_token })
+        Ok(LoginRes { access_token, refresh_token, user })
     }
 
-    async fn authenticate(&self, identifier: &str, password: &str) -> Result<User, AppError> {
-        let user_opt = self.user_repo.find_by_email(identifier).await?;
+    pub async fn reset_pasword(&self,user: User, data: ResetPassword) -> Result<(), AppError> {
+        if data.password1 != data.password2{
+            return Err(AppError::AuthError(format!("Kedua password tidak sama!")));
+        }
+        let password_hash = tokio::task::spawn_blocking(move || {
+            crate::utils::hash::generate(&data.password1) 
+        })
+        .await
+        .map_err(|e| AppError::InternalError(format!("Hash verify failed: {}", e)))??;
+
+        self.user_repo.update_password(&user.id, &password_hash, false).await?;
+
+        Ok(())
+    }
+
+    async fn authenticate(&self, username: &str, password: &str) -> Result<User, AppError> {
+        let user_opt = self.user_repo.find_by_username(username).await?;
         let user = match user_opt {
             Some(u) => u,
-            None => return Err(AppError::AuthError("Invalid identifier or password".to_string())),
+            None => return Err(AppError::AuthError("Invalid username or password".to_string())),
         };
 
         let plain_password = password.to_string();
@@ -81,7 +96,7 @@ impl AuthService {
         .map_err(|e| AppError::InternalError(format!("Hash verify failed: {}", e)))??;
  
         if !is_valid {
-            return Err(AppError::AuthError("Invalid identifier or password".to_string()));
+            return Err(AppError::AuthError("Invalid username or password".to_string()));
         }
 
         Ok(user)

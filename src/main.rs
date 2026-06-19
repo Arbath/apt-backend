@@ -2,7 +2,7 @@ use axum::serve;
 use dotenvy::dotenv;
 use tracing::{info, error};
 
-use apt_backend::{config::Config, database::{self, migrate_app}, routes::create_app, state::AppState};
+use apt_backend::{config::Config, database::{self, create_root_user, migrate_app}, routes::create_app, state::AppState};
 
 #[tokio::main]
 async fn main() {
@@ -18,6 +18,7 @@ async fn main() {
     let pool = database::create_pool(&config.db_url, config.db_max_con).await;
     if config.migrate {
         let _ = migrate_app(&pool).await.expect("Migrations failed!\n");
+        let _ = create_root_user(&pool, &config.root_username, &config.root_email, &config.root_password).await;
     }
 
     let state = AppState::new(config.clone(), pool).await;

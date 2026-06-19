@@ -1,7 +1,7 @@
 use axum::{extract::State, http::Uri, response::IntoResponse};
 use crate::utils::{response::WebResponse, response::AppError, request::ValidatedJson};
 use crate::middleware::auth::AuthUser;
-use crate::models::auth::{LoginReq, RefreshTokenReq};
+use crate::models::auth::{LoginReq, RefreshTokenReq, ResetPassword};
 use crate::service::auth::AuthService;
 use crate::state::AppState;
 
@@ -37,4 +37,16 @@ pub async fn logout_hand(
     auth_service.logout(data.refresh_token).await?;
 
     Ok(WebResponse::ok_empty(&uri, "Logout successfuly!"))
+}
+
+pub async fn reset_password_hand(
+    State(state): State<AppState>,
+    uri: Uri,
+    AuthUser(user): AuthUser,
+    ValidatedJson(data):  ValidatedJson<ResetPassword>
+) -> Result<impl IntoResponse, AppError> {
+    let auth_service = AuthService::new(state);
+    auth_service.reset_pasword(user, data).await?;
+
+    Ok(WebResponse::ok_empty(&uri, "Password berhasil direset silahkan login kembali."))
 }

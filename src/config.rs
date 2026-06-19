@@ -13,7 +13,10 @@ pub struct Config {
     pub db_url: String,
     pub db_max_con:u32,
     pub migrate: bool,
-    pub log_level: Level
+    pub log_level: Level,
+    pub root_username: String,
+    pub root_email: String,
+    pub root_password: String,
 }
 
 impl Config {
@@ -32,6 +35,9 @@ impl Config {
         let db_max_con = env::var("DB_CONNECTIONS").ok().and_then(|v| v.parse::<u32>().map(|v| v.max(1)).ok()).unwrap_or(5);
         let migrate = env::var("MIGRATE").unwrap_or("false".to_string()).to_lowercase().parse::<bool>().unwrap_or(false);
         let log_level_str = env::var("LOG_LEVEL").unwrap_or_else(|_| "INFO".to_string()).to_uppercase();
+        let root_username = env::var("ROOT_USERNAME").expect("ROOT_USERNAME required");
+        let root_email = env::var("ROOT_EMAIL").expect("ROOT_EMAIL required");
+        let root_password = env::var("ROOT_PASSWORD").expect("ROOT_PASSWORD required");
 
         let log_level = match log_level_str.as_str() {
             "TRACE" => Level::TRACE,
@@ -60,7 +66,10 @@ impl Config {
             db_url,
             db_max_con,
             migrate,
-            log_level
+            log_level,
+            root_username,
+            root_email,
+            root_password,
         }
     }
 }

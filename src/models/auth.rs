@@ -3,6 +3,8 @@ use chrono::{DateTime, Utc};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use crate::models::user::User;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: Uuid, 
@@ -22,7 +24,7 @@ pub struct RefreshToken {
 
 #[derive(Deserialize)]
 pub struct LoginReq {
-    pub email: String,
+    pub username: String,
     pub password: String,
 }
 
@@ -30,6 +32,14 @@ pub struct LoginReq {
 pub struct LoginRes {
     pub access_token: String,
     pub refresh_token: String,
+    pub user: User
+}
+
+
+#[derive(Serialize, Deserialize)]
+pub struct ResetPassword {
+    pub password1: String,
+    pub password2: String,
 }
 
 #[derive(Deserialize)]

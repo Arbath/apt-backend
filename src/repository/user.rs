@@ -1,6 +1,6 @@
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::models::user::User;
+use crate::models::user::{User, UserUpdate};
 use chrono::{DateTime, Utc};
 
 pub struct UserRepository {
@@ -22,12 +22,12 @@ impl UserRepository {
         .await
     }
 
-    pub async fn find_by_name(
+    pub async fn find_by_username(
         &self,
         name: &str,
     ) -> Result<Option<User>, sqlx::Error> {
         sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE name = $1"
+            "SELECT * FROM users WHERE username = $1"
         )
         .bind(name)
         .fetch_optional(&self.pool)
@@ -58,25 +58,6 @@ impl UserRepository {
         .await
     }
 
-    pub async fn update_profile(&self, user: User) -> Result<User, sqlx::Error> {
-        sqlx::query_as::<_, User>(
-            r#"
-            UPDATE users
-            SET name = $1,
-                email = $2,
-                is_superuser = $3
-            WHERE id = $4
-            RETURNING *
-            "#
-        )
-        .bind(user.name)
-        .bind(user.email)
-        .bind(user.is_superuser)
-        .bind(user.id)
-        .fetch_one(&self.pool)
-        .await
-    }
-
     pub async fn get_all(&self) -> Result<Vec<User>, sqlx::Error> {
         sqlx::query_as::<_, User>(
             r#"
@@ -91,36 +72,53 @@ impl UserRepository {
     pub async fn create(&self, data: User) -> Result<User, sqlx::Error> {
         sqlx::query_as::<_, User>(
             r#"
-            INSERT INTO users (name, password, email, is_superuser)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO users (username, name, password, email, institute_id, role)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
             "#
         )
+        .bind(data.username)
         .bind(data.name)
         .bind(data.password)
         .bind(data.email)
-        .bind(data.is_superuser)
+        .bind(data.institute_id)
+        .bind(data.role)
         .fetch_one(&self.pool)
         .await
     }
 
-    pub async fn update(&self, data: User) -> Result<User, sqlx::Error> {
+    pub async fn update(&self, id: &Uuid, data: UserUpdate) -> Result<User, sqlx::Error> {
         sqlx::query_as::<_, User>(
             r#"
             UPDATE users
-            SET name = $1,
-                password = $2,
-                email = $3,
-                is_superuser = $4
-            WHERE id = $5
+            SET username = COALESCE($1, username),
+                name = COALESCE($2, name),
+                email = COALESCE($3, email),
+                institute_id = COALESCE($4, institute_id),
+                role = COALESCE($5::role_users, role)
+            WHERE id = $6
             RETURNING *
             "#
         )
+        .bind(data.username)
         .bind(data.name)
-        .bind(data.password)
         .bind(data.email)
-        .bind(data.is_superuser)
-        .bind(data.id)
+        .bind(data.institute_id)
+        .bind(data.role)
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await
+    }
+    
+    pub async fn update_password(&self,id: &Uuid, password: &String, must_change: bool) -> Result<User, sqlx::Error> {
+        sqlx::query_as::<_, User>(
+            r#"
+            UPDATE users SET password = $1, must_change_password = $2 WHERE id = $3 RETURNING *
+            "#
+        )
+        .bind(password)
+        .bind(must_change)
+        .bind(id)
         .fetch_one(&self.pool)
         .await
     }

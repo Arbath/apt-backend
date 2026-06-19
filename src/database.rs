@@ -4,6 +4,8 @@ use sqlx::postgres::{PgPool, PgPoolOptions};
 use tracing::info;
 use sqlx::migrate::Migrator;
 
+use crate::models::user::RoleUsers;
+
 pub async fn create_pool(database_url : &String, max_con: u32) -> PgPool {
     let pool = PgPoolOptions::new()
         .max_connections(max_con)
@@ -57,5 +59,31 @@ pub async fn migrate_app(pool: &PgPool) -> Result<(), sqlx::Error>{
     APP_MIGRATOR.run(pool).await?;
 
     info!("Database migrations completed");
+    Ok(())
+}
+
+pub async fn create_root_user(pool: &PgPool, username: &String, email: &String, password: &String) -> Result<(), sqlx::Error> {
+    let role = RoleUsers::ADMIN;
+    let password_hash = crate::utils::hash::generate(&password)
+        .expect("Fatal: Failed hashing root password");
+    let result = sqlx::query(
+        r#"
+        INSERT INTO users (username, name, email, password, role)
+        VALUES ($1, $2, $3, $4, $5)
+        "#
+    )
+    .bind(&username)
+    .bind(&username)
+    .bind(email)
+    .bind(password_hash)
+    .bind(role)
+    .execute(pool)
+    .await?;
+
+    if result.rows_affected() > 0 {
+        info!("Root user created: {}", username);
+    } else {
+        info!("Root user already exixts. Skipping creation.");
+    }
     Ok(())
 }

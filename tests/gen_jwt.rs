@@ -9,12 +9,15 @@ use uuid::Uuid;
 fn test_gen_jwt () {
     let user = User { 
         id: Uuid::now_v7(), 
-        name: "Arbath A".to_string(), 
+        username: "Arbath".to_string(),
+        name: "Arbath".to_string(), 
         email: "arbath@teknohole.com".to_string(), 
         password: "secret".to_string(), 
-        is_superuser: true, 
-        created_at: Utc::now(), 
-        account_type: apt_backend::models::user::AccountType::USER };
+        role: apt_backend::models::user::RoleUsers::ADMIN, 
+        institute: None,
+        is_banned: false,
+        must_change_password: false,
+        created_at: Utc::now(),};
     let token = gen_access_token(&user);
     println!("{:?}", token);
 }
