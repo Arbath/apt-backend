@@ -1,5 +1,6 @@
 pub mod home;
 pub mod auth;
+pub mod user;
 
 use axum::Router;
 use tower_http::{
@@ -18,18 +19,18 @@ pub fn create_app(state: AppState) -> Router {
     let uncors = CorsLayer::permissive();
     
     Router::new()
-        .merge(home::routes().layer(cors.clone()))
+        .merge(home::routes().layer(uncors.clone()))
         .nest("/api",auth::routes()
-            .layer(uncors.clone())
+            .layer(cors.clone())
         )
-        // .nest("/api",topic::routes()
-        //     .layer(uncors.clone())
-        // )
+        .nest("/api/user",user::routes()
+            .layer(cors.clone())
+        )
         // .nest("/api",rule::routes()
-        //     .layer(uncors.clone())
+        //     .layer(cors.clone())
         // )
         // .nest("/api",webhook::routes()
-        //     .layer(uncors.clone())
+        //     .layer(cors.clone())
         // )
 
         .with_state(state)

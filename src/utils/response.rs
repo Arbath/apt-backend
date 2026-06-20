@@ -5,6 +5,7 @@ use axum::{
 };
 use serde::Serialize;
 use chrono::Utc;
+use tracing::error;
 
 #[derive(Serialize)]
 pub struct WebResponse<T> {
@@ -19,14 +20,14 @@ pub struct WebResponse<T> {
 
 impl<T: Serialize> WebResponse<T> {
     // Helper SUCCESS
-    pub fn ok(uri: &Uri, message: &str, data: T) -> (StatusCode, Json<Self>) {
+    pub fn ok(uri: &Uri, message: String, data: T) -> (StatusCode, Json<Self>) {
         let status = StatusCode::OK;
         (
             status,
             Json(Self {
                 success: true,
                 status: status.as_u16(),
-                message: message.to_string(),
+                message: message,
                 path: uri.path().to_string(),
                 timestamp: Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(), // Format Z
                 data: Some(data),
@@ -35,14 +36,14 @@ impl<T: Serialize> WebResponse<T> {
     }
 
     // Helper CREATED
-    pub fn created(uri: &Uri, message: &str, data: T) -> (StatusCode, Json<Self>) {
+    pub fn created(uri: &Uri, message: String, data: T) -> (StatusCode, Json<Self>) {
         let status = StatusCode::CREATED;
         (
             status,
             Json(Self {
                 success: true,
                 status: status.as_u16(),
-                message: message.to_string(),
+                message: message,
                 path: uri.path().to_string(),
                 timestamp: Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
                 data: Some(data),
@@ -52,14 +53,14 @@ impl<T: Serialize> WebResponse<T> {
 }
 
 impl WebResponse<()> {
-    pub fn ok_empty(uri: &Uri, message: &str) -> (StatusCode, Json<Self>) {
+    pub fn ok_empty(uri: &Uri, message: String) -> (StatusCode, Json<Self>) {
         let status = StatusCode::OK;
         (
             status,
             Json(Self { // Self di sini merujuk pada WebResponse<()>
                 success: true,
                 status: status.as_u16(),
-                message: message.to_string(),
+                message: message,
                 path: uri.path().to_string(),
                 timestamp: Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string(),
                 data: None, 
@@ -76,6 +77,7 @@ pub enum AppError {
     NotFound(String),
     BadRequest(String),
     Forbidden(String),
+    DatabaseError(sqlx::Error),
 }
 
 impl AppError {
@@ -100,6 +102,11 @@ impl IntoResponse for ApiError {
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            AppError::DatabaseError(err) => {
+                error!("[DATABASE ERROR di path {}] {:?}", self.path, err);(
+                    StatusCode::INTERNAL_SERVER_ERROR, "Internal Database Error!".to_string()
+                )
+            },
         };
 
         let body = Json(WebResponse {
@@ -124,6 +131,11 @@ impl IntoResponse for AppError {
             AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
             AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
             AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
+            AppError::DatabaseError(err) => {
+                error!("[DATABASE ERROR] {:?}", err);(
+                    StatusCode::INTERNAL_SERVER_ERROR, "Internal Database Error!".to_string()
+                )
+            },
         };
 
         let body = Json(WebResponse {
@@ -142,7 +154,7 @@ impl IntoResponse for AppError {
 // Helper (?)
 impl From<sqlx::Error> for AppError {
     fn from(err: sqlx::Error) -> Self {
-        AppError::BadRequest(format!("Database Error: {}", err))
+        AppError::DatabaseError(err)
     }
 }
 

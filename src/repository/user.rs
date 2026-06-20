@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::{models::user::{User, UserUpdate}, domain::repository::{TokenRepoTrait, UserRepoTrait}};
+use crate::{domain::repository::{TokenRepoTrait, UserRepoTrait}, models::user::{User, UserReq, UserUpdate}};
 use chrono::{DateTime, Utc};
 
 pub struct UserRepository {
@@ -73,20 +73,21 @@ impl UserRepoTrait for UserRepository {
         .await
     }
 
-    async fn create(&self, data: User) -> Result<User, sqlx::Error> {
+    async fn create(&self, data: UserReq, password_hash: String) -> Result<User, sqlx::Error> {
         sqlx::query_as::<_, User>(
             r#"
-            INSERT INTO users (username, name, password, email, institute_id, role)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO users (username, name, password, email, institute_id, role, must_change_password)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
             "#
         )
         .bind(data.username)
         .bind(data.name)
-        .bind(data.password)
+        .bind(password_hash)
         .bind(data.email)
         .bind(data.institute_id)
         .bind(data.role)
+        .bind(true)
         .fetch_one(&self.pool)
         .await
     }
@@ -114,13 +115,13 @@ impl UserRepoTrait for UserRepository {
         .await
     }
     
-    async fn update_password(&self,id: &Uuid, password: &String, must_change: bool) -> Result<User, sqlx::Error> {
+    async fn update_password(&self,id: &Uuid, password_hash: String, must_change: bool) -> Result<User, sqlx::Error> {
         sqlx::query_as::<_, User>(
             r#"
             UPDATE users SET password = $1, must_change_password = $2 WHERE id = $3 RETURNING *
             "#
         )
-        .bind(password)
+        .bind(password_hash)
         .bind(must_change)
         .bind(id)
         .fetch_one(&self.pool)

@@ -14,7 +14,7 @@ pub async fn login_hand(
 ) -> Result<impl IntoResponse, AppError> {  
     let response_data = auth_service.login(data).await?;
 
-    Ok(WebResponse::ok(&uri, "Login successfully!", response_data))
+    Ok(WebResponse::ok(&uri, "Login successfully!".to_string(), response_data))
 }
 
 pub async fn refresh_hand(
@@ -24,7 +24,7 @@ pub async fn refresh_hand(
 ) -> Result<impl IntoResponse, AppError> {
     let response_data = auth_service.refresh(data.refresh_token).await?;
 
-    Ok(WebResponse::ok(&uri, "Refresh successfully!", response_data))
+    Ok(WebResponse::ok(&uri, "Refresh successfully!".to_string(), response_data))
 }
 
 pub async fn logout_hand(
@@ -35,7 +35,7 @@ pub async fn logout_hand(
 ) -> Result<impl IntoResponse, AppError> {
     auth_service.logout(data.refresh_token).await?;
 
-    Ok(WebResponse::ok_empty(&uri, "Logout successfully!"))
+    Ok(WebResponse::ok_empty(&uri, "Logout successfully!".to_string()))
 }
 
 pub async fn reset_password_hand(
@@ -47,5 +47,5 @@ pub async fn reset_password_hand(
     // Catatan: Pastikan nama method di AuthService Anda adalah reset_pasword atau reset_password
     auth_service.reset_pasword(user, data).await?;
 
-    Ok(WebResponse::ok_empty(&uri, "Password berhasil direset, silakan login kembali."))
+    Ok(WebResponse::ok_empty(&uri, "Password berhasil direset, silakan login kembali.".to_string()))
 }

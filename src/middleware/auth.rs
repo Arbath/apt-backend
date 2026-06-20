@@ -24,7 +24,7 @@ impl FromRequestParts<AppState> for AuthAdmin {
         let user = fetch_user_from_request(parts, state).await.map_err(|e|e.with_path(&uri))?;
 
         if user.role != RoleUsers::ADMIN {
-            return Err(AppError::Forbidden("Insufficient permissions: Superuser required".to_string()).with_path(&uri));
+            return Err(AppError::Forbidden("Insufficient permissions: Admin required".to_string()).with_path(&uri));
         }
 
         Ok(AuthAdmin(user))

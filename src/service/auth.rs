@@ -76,7 +76,7 @@ impl<U: UserRepoTrait, T: TokenRepoTrait> AuthService<U, T> {
         .await
         .map_err(|e| AppError::InternalError(format!("Hash verify failed: {}", e)))??;
 
-        self.user_repo.update_password(&user.id, &password_hash, false).await?;
+        self.user_repo.update_password(&user.id, password_hash, false).await?;
 
         Ok(())
     }

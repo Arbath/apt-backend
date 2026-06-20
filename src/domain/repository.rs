@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use crate::models::user::{User, UserUpdate};
+use crate::models::user::{User, UserReq, UserUpdate};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -11,9 +11,9 @@ pub trait UserRepoTrait: Send + Sync {
     async fn find_by_email(&self, email: &str) -> Result<Option<User>, sqlx::Error>;
     async fn find_by_name_or_email(&self, identifier: &str) -> Result<Option<User>, sqlx::Error>;
     async fn get_all(&self) -> Result<Vec<User>, sqlx::Error>;
-    async fn create(&self, data: User) -> Result<User, sqlx::Error>;
+    async fn create(&self, data: UserReq, password_hash: String) -> Result<User, sqlx::Error>;
     async fn update(&self, id: &Uuid, data: UserUpdate) -> Result<User, sqlx::Error>;
-    async fn update_password(&self, id: &Uuid, password: &String, must_change: bool) -> Result<User, sqlx::Error>;
+    async fn update_password(&self, id: &Uuid, password_hash: String, must_change: bool) -> Result<User, sqlx::Error>;
     async fn delete(&self, user_id: &Uuid) -> Result<User, sqlx::Error>;
 }
 
