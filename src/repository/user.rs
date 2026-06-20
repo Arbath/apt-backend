@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::{models::user::{User, UserUpdate}, ports::repository::{TokenRepoTrait, UserRepoTrait}};
+use crate::{models::user::{User, UserUpdate}, domain::repository::{TokenRepoTrait, UserRepoTrait}};
 use chrono::{DateTime, Utc};
 
 pub struct UserRepository {

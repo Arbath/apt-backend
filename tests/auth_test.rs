@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use apt_backend::models::auth::{Claims, LoginReq, ResetPassword};
 use apt_backend::models::user::{User, RoleUsers};
-use apt_backend::ports::repository::{MockTokenRepoTrait, MockUserRepoTrait};
+use apt_backend::domain::repository::{MockTokenRepoTrait, MockUserRepoTrait};
 use apt_backend::service::auth::AuthService;
 use apt_backend::state::AppConfig;
 use apt_backend::utils::response::AppError;
@@ -15,7 +15,7 @@ use jsonwebtoken::{encode, Header, EncodingKey};
 // HELPER FUNCTIONS
 // ---------------------------------------------------------
 
-// Pastikan menggunakan Arc<AppConfig> jika Anda sudah menerapkan Solusi 2 sebelumnya
+// Pastikan menggunakan Arc<AppConfig>
 fn create_dummy_config() -> Arc<AppConfig> {
     Arc::new(AppConfig {
         secret: "rahasia_negara_super_aman_1234567890".to_string(),
@@ -157,7 +157,7 @@ async fn test_reset_password_success() {
             id == &cloned_user.id && *must_change == false
         })
         .times(1)
-        .returning(|_, _, _| Ok(create_dummy_user())); // Return bebas karena Ok(()) sudah cukup jika structnya tidak mengembalikan data spesifik. Jika repository Anda mengembalikan User, biarkan seperti ini.
+        .returning(|_, _, _| Ok(create_dummy_user())); // Return bebas karena Ok(()) sudah cukup jika structnya tidak mengembalikan data spesifik. Jika repository mengembalikan User, biarkan seperti ini.
 
     let config = create_dummy_config();
     let auth_service = AuthService::new(mock_user_repo, mock_token_repo, (*config).clone());

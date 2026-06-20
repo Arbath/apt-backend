@@ -5,10 +5,9 @@ use crate::{models::{auth::{LoginReq, LoginRes, ResetPassword}, user::User}, sta
 use crate::state::AppState;
 use crate::utils::{auth::*, response::AppError};
 
-use crate::ports::repository::{UserRepoTrait, TokenRepoTrait}; 
+use crate::domain::repository::{UserRepoTrait, TokenRepoTrait}; 
 use crate::repository::user::{UserRepository, TokenRepository};
 
-#[allow(dead_code)]
 pub struct AuthService<U: UserRepoTrait, T: TokenRepoTrait> {
     user_repo: U,
     token_repo: T,
@@ -127,7 +126,7 @@ mod tests {
     use super::*;
     use crate::models::auth::{Claims, LoginReq, ResetPassword};
     use crate::models::user::{User, RoleUsers};
-    use crate::ports::repository::{MockUserRepoTrait, MockTokenRepoTrait};
+    use crate::domain::repository::{MockUserRepoTrait, MockTokenRepoTrait};
     use crate::state::AppConfig;
     use mockall::predicate::*;
     use tower_http::cors::CorsLayer;

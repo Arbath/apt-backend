@@ -8,4 +8,4 @@ pub mod service;
 pub mod handler;
 pub mod routes;
 pub mod utils;
-pub mod ports;
+pub mod domain;
