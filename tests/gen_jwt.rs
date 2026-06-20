@@ -14,7 +14,7 @@ fn test_gen_jwt () {
         email: "arbath@teknohole.com".to_string(), 
         password: "secret".to_string(), 
         role: apt_backend::models::user::RoleUsers::ADMIN, 
-        institute: None,
+        institute_id: None,
         is_banned: false,
         must_change_password: false,
         created_at: Utc::now(),};

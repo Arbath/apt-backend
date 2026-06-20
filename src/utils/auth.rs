@@ -5,11 +5,11 @@ use rand::distributions::Alphanumeric;
 use crate::models::auth::Claims;
 use crate::models::user::User;
 use crate::utils::response::AppError;
-use crate::state::AppState;
+use crate::state::AppConfig;
 
-pub async fn gen_access_token(user: &User, state: &AppState) -> Result<String, AppError> {
+pub async fn gen_access_token(user: &User, config: &AppConfig) -> Result<String, AppError> {
     let now = Utc::now();
-    let access_ttl = 60 * state.app_config.access_ttl;
+    let access_ttl = 60 * config.access_ttl;
     let access_duration = Duration::seconds(access_ttl as i64);
     let access_expires_at = now + access_duration;
     let claims = Claims {
@@ -22,14 +22,14 @@ pub async fn gen_access_token(user: &User, state: &AppState) -> Result<String, A
 
     let access_token = encode(
         &Header::default(),&claims,
-        &EncodingKey::from_secret(state.app_config.secret.as_bytes())
+        &EncodingKey::from_secret(config.secret.as_bytes())
     ).map_err(|e| AppError::InternalError(e.to_string()))?;
 
     Ok(access_token)
 }
-pub async fn gen_refresh_token(user: &User, state: &AppState) -> Result<String, AppError> {
+pub async fn gen_refresh_token(user: &User, config: &AppConfig) -> Result<String, AppError> {
     let now = Utc::now();
-    let refresh_ttl = 60 * 60 * &state.app_config.refresh_ttl;
+    let refresh_ttl = 60 * 60 * &config.refresh_ttl;
     let refresh_duration = Duration::seconds(refresh_ttl as i64);
     let refresh_expires_at = now + refresh_duration;
     let claims = Claims {
@@ -42,7 +42,7 @@ pub async fn gen_refresh_token(user: &User, state: &AppState) -> Result<String, 
     let refresh_token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(state.app_config.secret.as_bytes())
+        &EncodingKey::from_secret(config.secret.as_bytes())
     ).map_err(|e| AppError::InternalError(e.to_string()))?;
 
     Ok(refresh_token)

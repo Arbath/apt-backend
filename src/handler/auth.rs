@@ -1,52 +1,51 @@
-use axum::{extract::State, http::Uri, response::IntoResponse};
+use axum::{http::Uri, response::IntoResponse};
 use crate::utils::{response::WebResponse, response::AppError, request::ValidatedJson};
 use crate::middleware::auth::AuthUser;
 use crate::models::auth::{LoginReq, RefreshTokenReq, ResetPassword};
 use crate::service::auth::AuthService;
-use crate::state::AppState;
+use crate::repository::user::{UserRepository, TokenRepository};
+
+type AppAuthService = AuthService<UserRepository, TokenRepository>;
 
 pub async fn login_hand(
-    State(state): State<AppState>,
     uri: Uri,
+    auth_service: AppAuthService,
     ValidatedJson(data): ValidatedJson<LoginReq>
 ) -> Result<impl IntoResponse, AppError> {  
-    let auth_service = AuthService::new(state);
     let response_data = auth_service.login(data).await?;
 
-    Ok(WebResponse::ok(&uri, "Login successfuly!", response_data))
+    Ok(WebResponse::ok(&uri, "Login successfully!", response_data))
 }
 
 pub async fn refresh_hand(
-    State(state): State<AppState>,
     uri: Uri,
+    auth_service: AppAuthService,
     ValidatedJson(data): ValidatedJson<RefreshTokenReq>
 ) -> Result<impl IntoResponse, AppError> {
-    let auth_service = AuthService::new(state);
     let response_data = auth_service.refresh(data.refresh_token).await?;
 
-    Ok(WebResponse::ok(&uri, "Refresh successfuly!", response_data))
+    Ok(WebResponse::ok(&uri, "Refresh successfully!", response_data))
 }
 
 pub async fn logout_hand(
-    State(state): State<AppState>,
     uri: Uri,
     AuthUser(_): AuthUser,
-    ValidatedJson(data):  ValidatedJson<RefreshTokenReq>
+    auth_service: AppAuthService,
+    ValidatedJson(data): ValidatedJson<RefreshTokenReq>
 ) -> Result<impl IntoResponse, AppError> {
-    let auth_service = AuthService::new(state);
     auth_service.logout(data.refresh_token).await?;
 
-    Ok(WebResponse::ok_empty(&uri, "Logout successfuly!"))
+    Ok(WebResponse::ok_empty(&uri, "Logout successfully!"))
 }
 
 pub async fn reset_password_hand(
-    State(state): State<AppState>,
     uri: Uri,
     AuthUser(user): AuthUser,
-    ValidatedJson(data):  ValidatedJson<ResetPassword>
+    auth_service: AppAuthService,
+    ValidatedJson(data): ValidatedJson<ResetPassword>
 ) -> Result<impl IntoResponse, AppError> {
-    let auth_service = AuthService::new(state);
+    // Catatan: Pastikan nama method di AuthService Anda adalah reset_pasword atau reset_password
     auth_service.reset_pasword(user, data).await?;
 
-    Ok(WebResponse::ok_empty(&uri, "Password berhasil direset silahkan login kembali."))
+    Ok(WebResponse::ok_empty(&uri, "Password berhasil direset, silakan login kembali."))
 }

@@ -30,3 +30,13 @@ rand = "0.8"
 # HTTP Client
 reqwest = { version = "0.12", features = ["json"], optional = false }
 http = "1.4.0"
+
+# Testing
+async-trait = "0.1.89"
+mockall = "0.14.0"
+
+[features]
+test-utils = [] 
+
+[dev-dependencies]
+apt-backend = { path = ".", features = ["test-utils"] }

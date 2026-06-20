@@ -21,7 +21,7 @@ pub struct User {
     pub email: String,
     #[serde(skip_serializing)]
     pub password: String,
-    pub institute_id: Option<String>,
+    pub institute_id: Option<i32>,
     pub role: RoleUsers,
     pub is_banned: bool,
     pub must_change_password: bool,

@@ -28,7 +28,7 @@ pub struct LoginReq {
     pub password: String,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct LoginRes {
     pub access_token: String,
     pub refresh_token: String,
