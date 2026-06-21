@@ -4,6 +4,7 @@ CREATE TABLE lecturers (
     nip VARCHAR(25) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
+    status approval_status NOT NULL DEFAULT 'pending',
     study_program_id INTEGER NOT NULL REFERENCES study_programs(id) ON DELETE SET NULL
 );
 

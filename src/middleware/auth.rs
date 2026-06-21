@@ -6,6 +6,7 @@ use crate::models::{user::User, auth::CheckApiKey};
 
 pub struct AuthUser(pub User);
 pub struct AuthAdmin(pub User);
+pub struct AuthAdminOrAuditee(pub User);
 
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = AppError;
@@ -28,6 +29,21 @@ impl FromRequestParts<AppState> for AuthAdmin {
         }
 
         Ok(AuthAdmin(user))
+    }
+}
+
+impl FromRequestParts<AppState> for AuthAdminOrAuditee {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+        let uri = parts.uri.clone();
+        let user = fetch_user_from_request(parts, state).await.map_err(|e|e.with_path(&uri))?;
+
+        if user.role != RoleUsers::ADMIN || user.role != RoleUsers::AUDITEE {
+            return Err(AppError::Forbidden("Insufficient permissions: Admin or Auditee required".to_string()).with_path(&uri));
+        }
+
+        Ok(AuthAdminOrAuditee(user))
     }
 }
 

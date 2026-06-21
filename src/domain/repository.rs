@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use crate::models::{institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, user::{User, UserReq, UserUpdate}};
+use crate::models::{institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, user::{User, UserReq, UserUpdate}};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -46,4 +46,17 @@ pub trait StudyProgramTrait: Send + Sync {
     async fn create(&self, data: StudyProgramCreate) -> Result<StudyProgram, sqlx::Error>;
     async fn update(&self, program_id: i32, data: StudyProgramUpdate) -> Result<StudyProgram, sqlx::Error>;
     async fn delete(&self, program_id: i32) -> Result<StudyProgram, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait LecturerTrait: Send + Sync {
+    async fn find_by_id(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
+    async fn find_by_nip(&self, lecturer_nip: String) -> Result<Lecturer, sqlx::Error>;
+    async fn search(&self, query: LecturerQuery) -> Result<(Vec<Lecturer>, i64), sqlx::Error>;
+    async fn create(&self, data: LecturerCreate) -> Result<Lecturer, sqlx::Error>;
+    async fn update(&self, lecturer_id: Uuid, data: LecturerUpdate) -> Result<Lecturer, sqlx::Error>;
+    async fn delete(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
+    async fn approve(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
+    async fn reject(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
 }

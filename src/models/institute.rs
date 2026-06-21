@@ -49,13 +49,13 @@ pub struct StudyProgramUpdate {
     pub institute_id: Option<i32>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct InstituteNested {
     pub id: i32,
     pub name: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StudyProgramNested {
     pub id: i32,
     pub name: String,

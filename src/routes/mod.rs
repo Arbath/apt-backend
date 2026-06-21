@@ -2,6 +2,7 @@ pub mod home;
 pub mod auth;
 pub mod user;
 pub mod institute;
+pub mod lecturer;
 
 use axum::Router;
 use tower_http::{
@@ -30,9 +31,9 @@ pub fn create_app(state: AppState) -> Router {
         .nest("/api",institute::routes()
             .layer(cors.clone())
         )
-        // .nest("/api",webhook::routes()
-        //     .layer(cors.clone())
-        // )
+        .nest("/api",lecturer::routes()
+            .layer(cors.clone())
+        )
 
         .with_state(state)
 
