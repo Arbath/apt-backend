@@ -15,28 +15,25 @@ impl <U: UserRepoTrait, I: InstituteTrait, SP: StudyProgramTrait> InstituteServi
         Self { user_repo, institute_repo, study_prg_repo, config }
     }
 
-    pub async fn get_one_institute(&self, institute_id: i32) -> Result<(String, Institute), AppError> {
+    pub async fn get_one_institute(&self, institute_id: i32) -> Result<Institute, AppError> {
         let q = self.institute_repo.find_by_id(institute_id)
             .await.map_err(|_|AppError::NotFound(format!("Lembaga dengan id '{}' tidak ditemukan!", institute_id)))?;
-        let msg= format!("Detail lembaga '{}'", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
     
-    pub async fn get_one_institute_name(&self, institute_name: &str, page: i64, limit: i64) -> Result<(String, (Vec<Institute>, u64)), AppError> {
+    pub async fn get_one_institute_name(&self, institute_name: &str, page: i64, limit: i64) -> Result<(Vec<Institute>, u64), AppError> {
         let q = self.institute_repo.find_by_name(institute_name, page, limit)
             .await.map_err(|_|AppError::NotFound(format!("Lembaga dengan keyword '{}' tidak ditemukan!", institute_name)))?;
-        let msg= format!("List lembaga dengan keyword '{}'", institute_name);
 
-        Ok((msg, q))
+        Ok(q)
     }
     
-    pub async fn get_all_institute(&self, page: i64, limit: i64) -> Result<(String, (Vec<Institute>, u64)), AppError> {
+    pub async fn get_all_institute(&self, page: i64, limit: i64) -> Result<(Vec<Institute>, u64), AppError> {
         let q = self.institute_repo.find_all(page, limit)
             .await.map_err(|_|AppError::NotFound(format!("Lembaga tidak ditemukan!")))?;
-        let msg= format!("Detail semua lembaga");
 
-        Ok((msg, q))
+        Ok(q)
     }
     
     pub async fn get_all_institute_study_programs(&self, institute_id: i32) -> Result<(String, Vec<StudyProgram>), AppError> {
@@ -48,7 +45,7 @@ impl <U: UserRepoTrait, I: InstituteTrait, SP: StudyProgramTrait> InstituteServi
         Ok((msg, q))
     }
 
-    pub async fn add_institute(&self, data: InstituteCreate) -> Result<(String, Institute), AppError> {
+    pub async fn add_institute(&self, data: InstituteCreate) -> Result<Institute, AppError> {
         let institute_name = data.name.clone();
         let q = match self.institute_repo.create(data).await {
             Ok(institute) => institute,
@@ -68,12 +65,11 @@ impl <U: UserRepoTrait, I: InstituteTrait, SP: StudyProgramTrait> InstituteServi
                 }
             }
         };
-        let msg= format!("Lembaga '{}' berhasil ditambahkan.", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
     
-    pub async fn edit_institute(&self, institute_id: i32, data: InstituteUpdate) -> Result<(String, Institute), AppError> {
+    pub async fn edit_institute(&self, institute_id: i32, data: InstituteUpdate) -> Result<Institute, AppError> {
         let institute_name = data.name.clone();
         let q = match self.institute_repo.update(institute_id, data).await {
             Ok(institute) => institute,
@@ -101,44 +97,39 @@ impl <U: UserRepoTrait, I: InstituteTrait, SP: StudyProgramTrait> InstituteServi
                 }
             }
         };
-        let msg= format!("Lembaga '{}' berhasil diperbarui.", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
 
-    pub async fn delete_institute(&self, institute_id: i32) -> Result<(String, Institute), AppError> {
+    pub async fn delete_institute(&self, institute_id: i32) -> Result<Institute, AppError> {
         let q = self.institute_repo.delete(institute_id)
             .await.map_err(|_|AppError::NotFound(format!("Lembaga dengan id '{}' tidak ditemukan!", institute_id)))?;
-        let msg= format!("Lembaga dengan id '{}' berhasi dihapus.", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
 
-    pub async fn get_one_study_prg(&self, study_prg_id: i32) -> Result<(String, StudyProgram), AppError> {
+    pub async fn get_one_study_prg(&self, study_prg_id: i32) -> Result<StudyProgram, AppError> {
         let q = self.study_prg_repo.find_by_id(study_prg_id)
             .await.map_err(|_|AppError::NotFound(format!("Program Studi dengan id '{}' tidak ditemukan!", study_prg_id)))?;
-        let msg= format!("Detail Program Studi '{}'", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
     
-    pub async fn get_one_study_prg_name(&self, study_prg_name: &str, page: i64, limit: i64) -> Result<(String, (Vec<StudyProgram>, u64)), AppError> {
+    pub async fn get_one_study_prg_name(&self, study_prg_name: &str, page: i64, limit: i64) -> Result<(Vec<StudyProgram>, u64), AppError> {
         let q = self.study_prg_repo.find_by_name(study_prg_name, page, limit)
             .await.map_err(|_|AppError::NotFound(format!("Program Studi dengan keyword '{}' tidak ditemukan!", study_prg_name)))?;
-        let msg= format!("Detail Program Studi dengan keyword '{}'", study_prg_name);
 
-        Ok((msg, q))
+        Ok(q)
     }
     
-    pub async fn get_all_study_prg(&self, page: i64, limit: i64) -> Result<(String, (Vec<StudyProgram>, u64)), AppError> {
+    pub async fn get_all_study_prg(&self, page: i64, limit: i64) -> Result<(Vec<StudyProgram>, u64), AppError> {
         let q = self.study_prg_repo.find_all(page, limit)
             .await.map_err(|_|AppError::NotFound(format!("Program Studi tidak ditemukan!")))?;
-        let msg= format!("Detail semua Program Studi");
 
-        Ok((msg, q))
+        Ok(q)
     }
 
-    pub async fn add_study_prg(&self, data: StudyProgramCreate) -> Result<(String, StudyProgram), AppError> {
+    pub async fn add_study_prg(&self, data: StudyProgramCreate) -> Result<StudyProgram, AppError> {
         let study_prg_name = data.name.clone();
         let q = match self.study_prg_repo.create(data).await {
             Ok(institute) => institute,
@@ -158,12 +149,11 @@ impl <U: UserRepoTrait, I: InstituteTrait, SP: StudyProgramTrait> InstituteServi
                 }
             }
         };
-        let msg= format!("Program Studi '{}' berhasil ditambahkan.", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
     
-    pub async fn edit_study_prg(&self, study_prg_id: i32, data: StudyProgramUpdate) -> Result<(String, StudyProgram), AppError> {
+    pub async fn edit_study_prg(&self, study_prg_id: i32, data: StudyProgramUpdate) -> Result<StudyProgram, AppError> {
         let study_prg_name = data.name.clone();
         let q = match self.study_prg_repo.update(study_prg_id, data).await {
             Ok(institute) => institute,
@@ -191,17 +181,15 @@ impl <U: UserRepoTrait, I: InstituteTrait, SP: StudyProgramTrait> InstituteServi
                 }
             }
         };
-        let msg= format!("Program Studi '{}' berhasil diperbarui.", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
 
-    pub async fn delete_study_prg(&self, study_prg_id: i32) -> Result<(String, StudyProgram), AppError> {
+    pub async fn delete_study_prg(&self, study_prg_id: i32) -> Result<StudyProgram, AppError> {
         let q = self.study_prg_repo.delete(study_prg_id)
             .await.map_err(|_|AppError::NotFound(format!("Program Studi dengan id '{}' tidak ditemukan!", study_prg_id)))?;
-        let msg= format!("Program Studi dengan id '{}' berhasi dihapus.", q.name);
 
-        Ok((msg, q))
+        Ok(q)
     }
 }
 

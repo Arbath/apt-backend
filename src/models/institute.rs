@@ -48,3 +48,37 @@ pub struct StudyProgramUpdate {
     pub description: Option<String>,
     pub institute_id: Option<i32>,
 }
+
+#[derive(Debug, Serialize)]
+pub struct InstituteNested {
+    pub id: i32,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudyProgramNested {
+    pub id: i32,
+    pub name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudyProgramResponse {
+    pub id: i32,
+    pub name: String,
+    pub description: Option<String>,
+    pub institute: InstituteNested,
+}
+
+impl From<StudyProgram> for StudyProgramResponse {
+    fn from(detail: StudyProgram) -> Self {
+        Self {
+            id: detail.id,
+            name: detail.name,
+            description: detail.description,
+            institute: InstituteNested {
+                id: detail.institute_id,
+                name: detail.institute_name,
+            },
+        }
+    }
+}
