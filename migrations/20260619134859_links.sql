@@ -6,7 +6,7 @@ CREATE TABLE links(
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
     owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    ended_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    created_at TIMESTAMPTZ DEFAULT NOW(),
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    ended_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );

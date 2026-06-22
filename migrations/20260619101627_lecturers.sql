@@ -17,7 +17,7 @@ CREATE TABLE lecturer_recognition_categories (
 CREATE TABLE lecturer_recognitions(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
     lecturer UUID NOT NULL REFERENCES lecturers(id) ON DELETE CASCADE,
-    category_id UUID NOT NULL REFERENCES lecturer_recognition_categories(id) ON DELETE CASCADE,
+    category_id INTEGER NOT NULL REFERENCES lecturer_recognition_categories(id) ON DELETE CASCADE,
     description TEXT,
     proof_links JSONB NOT NULL DEFAULT '[]'::jsonb,
     obtained_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
