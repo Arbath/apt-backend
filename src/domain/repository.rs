@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use crate::models::{institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, user::{User, UserReq, UserUpdate}};
+use crate::models::{institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, feature::{Link, LinkCreate, LinkUpdate, LogActivity}, recognition::{RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -59,4 +59,44 @@ pub trait LecturerTrait: Send + Sync {
     async fn delete(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
     async fn approve(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
     async fn reject(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait RecognitionLecturerTrait: Send + Sync {
+    async fn find_by_id(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
+    async fn search(&self, query: RecognitionLecturerQuery) -> Result<(Vec<RecognitionLecturer>, i64), sqlx::Error>;
+    async fn create(&self, data: RecognitionLecturerCreate) -> Result<RecognitionLecturer, sqlx::Error>;
+    async fn update(&self, recognition_id: Uuid, data: RecognitionLecturerUpdate) -> Result<RecognitionLecturer, sqlx::Error>;
+    async fn delete(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
+    async fn approve(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
+    async fn reject(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait RecognitionLecturerCatTrait: Send + Sync {
+    async fn find_by_id(&self, category_id: i32) -> Result<RecognitionCategory, sqlx::Error>;
+    async fn find_name(&self, category_name: &str) -> Result<Vec<RecognitionCategory>, sqlx::Error>;
+    async fn create(&self, data: RecognitionCategoryCreate) -> Result<RecognitionCategory, sqlx::Error>;
+    async fn update(&self, category_id: i32, data: RecognitionCategoryUpdate) -> Result<RecognitionCategory, sqlx::Error>;
+    async fn delete(&self, category_id: i32) -> Result<RecognitionCategory, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait LinkTrait: Send + Sync {
+    async fn find_by_id(&self, link_id: Uuid) -> Result<Link, sqlx::Error>;
+    async fn find_by_slug(&self, slug: String) -> Result<Link, sqlx::Error>;
+    async fn find_all_user(&self, user_id: Uuid) -> Result<Vec<Link>, sqlx::Error>;
+    async fn create(&self, owner_id: Uuid, data: LinkCreate) -> Result<Link, sqlx::Error>;
+    async fn update(&self, link_id: Uuid, data: LinkUpdate) -> Result<Link, sqlx::Error>;
+    async fn delete(&self, link_id: Uuid) -> Result<Link, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait LogActivityTrait: Send + Sync {
+    async fn create(&self, user_id: Uuid, activity: String) -> Result<LogActivity, sqlx::Error>;
+    async fn delete(&self, log_id: Uuid) -> Result<LogActivity, sqlx::Error>;
 }

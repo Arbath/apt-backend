@@ -9,7 +9,7 @@ CREATE TABLE lecturers (
 );
 
 CREATE TABLE lecturer_recognition_categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
+    id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL UNIQUE,
     description TEXT
 );

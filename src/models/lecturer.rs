@@ -77,6 +77,7 @@ pub struct LecturerQuery{
     pub name: Option<String>,
     pub study_program: Option<String>,
     pub institute: Option<String>,
+    pub status: Option<String>,
     pub limit: Option<u64>,
     pub page: Option<u64>,
 }

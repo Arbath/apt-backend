@@ -2,3 +2,6 @@ pub mod user;
 pub mod institute;
 pub mod study_program;
 pub mod lecturer;
+pub mod recognition;
+pub mod recognition_category;
+pub mod feature;

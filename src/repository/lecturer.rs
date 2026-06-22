@@ -64,6 +64,7 @@ impl LecturerTrait for LecturerRepository {
         let name_param = query.name.map(|n| format!("%{}%", n));
         let sp_param = query.study_program.map(|sp| format!("%{}%", sp));
         let inst_param = query.institute.map(|inst| format!("%{}%", inst));
+        let status_param = query.status;
 
         let total_items: i64 = sqlx::query_scalar(
             r#"
@@ -74,11 +75,13 @@ impl LecturerTrait for LecturerRepository {
             WHERE ($1::text IS NULL OR l.name ILIKE $1)
               AND ($2::text IS NULL OR sp.name ILIKE $2)
               AND ($3::text IS NULL OR i.name ILIKE $3)
+              AND ($4::approval_status IS NULL OR l.status = $4)
             "#
         )
         .bind(&name_param)
         .bind(&sp_param)
         .bind(&inst_param)
+        .bind(&status_param)
         .fetch_one(&self.pool)
         .await?;
 
@@ -96,6 +99,7 @@ impl LecturerTrait for LecturerRepository {
             WHERE ($1::text IS NULL OR l.name ILIKE $1)
               AND ($2::text IS NULL OR sp.name ILIKE $2)
               AND ($3::text IS NULL OR i.name ILIKE $3)
+              AND ($4::approval_status IS NULL OR l.status = $4)
             ORDER BY l.name ASC
             LIMIT $4 OFFSET $5
             "#
@@ -103,6 +107,7 @@ impl LecturerTrait for LecturerRepository {
         .bind(&name_param)
         .bind(&sp_param)
         .bind(&inst_param)
+        .bind(&status_param)
         .bind(limit)
         .bind(offset)
         .fetch_all(&self.pool)
