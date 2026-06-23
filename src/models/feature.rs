@@ -11,8 +11,7 @@ pub struct Link{
     pub slug: String,
     pub description: String,
     pub is_active: bool,
-    pub owner_id: Uuid, // relasi dengan users
-    pub owner_username: String,
+    pub institute_id: i32,
     pub started_at: DateTime<Utc>,
     pub ended_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
@@ -30,12 +29,12 @@ pub struct LinkCreate{
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct LinkUpdate{
-    pub name: String,
-    pub slug: String,
-    pub description: String,
-    pub is_active: bool,
-    pub started_at: DateTime<Utc>,
-    pub ended_at: DateTime<Utc>,
+    pub name: Option<String>,
+    pub slug: Option<String>,
+    pub description: Option<String>,
+    pub is_active: Option<bool>,
+    pub started_at: Option<DateTime<Utc>>,
+    pub ended_at: Option<DateTime<Utc>>,
 }
 
 // Table logs

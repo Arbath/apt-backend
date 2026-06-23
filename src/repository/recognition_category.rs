@@ -33,6 +33,14 @@ impl RecognitionLecturerCatTrait for RecognitionCategoryRepository {
         .fetch_all(&self.pool)
         .await
     }
+    
+    async fn find_all(&self) -> Result<Vec<RecognitionCategory>, sqlx::Error> {
+        sqlx::query_as::<_, RecognitionCategory>(
+            "SELECT * FROM lecturer_recognition_categories ORDER BY name ASC"
+        )
+        .fetch_all(&self.pool)
+        .await
+    }
 
     async fn create(&self, data: RecognitionCategoryCreate) -> Result<RecognitionCategory, sqlx::Error> {
         sqlx::query_as::<_, RecognitionCategory>(

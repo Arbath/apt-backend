@@ -5,7 +5,7 @@ CREATE TABLE links(
     slug VARCHAR(255) NOT NULL UNIQUE,
     description TEXT,
     is_active BOOLEAN NOT NULL DEFAULT true,
-    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    institute_id INTEGER NOT NULL REFERENCES institutes(id) ON DELETE CASCADE,
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ended_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW()

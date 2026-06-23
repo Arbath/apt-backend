@@ -23,10 +23,8 @@ impl LinkTrait for LinkRepository {
     async fn find_by_id(&self, link_id: Uuid) -> Result<Link, sqlx::Error> {
         sqlx::query_as::<_, Link>(
             r#"
-            SELECT l.*, u.username AS owner_username 
-            FROM links l
-            INNER JOIN users u ON l.owner_id = u.id
-            WHERE l.id = $1
+            SELECT * FROM links 
+            WHERE id = $1
             "#
         )
         .bind(link_id)
@@ -37,10 +35,8 @@ impl LinkTrait for LinkRepository {
     async fn find_by_slug(&self, slug: String) -> Result<Link, sqlx::Error> {
         sqlx::query_as::<_, Link>(
             r#"
-            SELECT l.*, u.username AS owner_username 
-            FROM links l
-            INNER JOIN users u ON l.owner_id = u.id
-            WHERE l.slug = $1
+            SELECT * FROM links 
+            WHERE slug = $1
             "#
         )
         .bind(slug)
@@ -48,39 +44,33 @@ impl LinkTrait for LinkRepository {
         .await
     }
 
-    async fn find_all_user(&self, user_id: Uuid) -> Result<Vec<Link>, sqlx::Error> {
+    async fn find_all_by_institute(&self, institute_id: i32) -> Result<Vec<Link>, sqlx::Error> {
         sqlx::query_as::<_, Link>(
             r#"
-            SELECT l.*, u.username AS owner_username 
-            FROM links l
-            INNER JOIN users u ON l.owner_id = u.id
-            WHERE l.owner_id = $1
-            ORDER BY l.created_at DESC
+            SELECT *
+            FROM links 
+            WHERE institute_id = $1
+            ORDER BY created_at DESC
             "#
         )
-        .bind(user_id)
+        .bind(institute_id)
         .fetch_all(&self.pool)
         .await
     }
 
-    async fn create(&self,owner_id: Uuid, data: LinkCreate) -> Result<Link, sqlx::Error> {
+    async fn create(&self, institute_id: i32, data: LinkCreate) -> Result<Link, sqlx::Error> {
         sqlx::query_as::<_, Link>(
             r#"
-            WITH new_link AS (
-                INSERT INTO links (name, slug, description, is_active, owner_id, started_at, ended_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING *
-            )
-            SELECT nl.*, u.username AS owner_username 
-            FROM new_link nl
-            INNER JOIN users u ON nl.owner_id = u.id
+            INSERT INTO links (name, slug, description, is_active, institute_id, started_at, ended_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *
             "#
         )
         .bind(data.name)
         .bind(data.slug)
         .bind(data.description)
         .bind(data.is_active)
-        .bind(owner_id)
+        .bind(institute_id)
         .bind(data.started_at)
         .bind(data.ended_at)
         .fetch_one(&self.pool)
@@ -90,21 +80,16 @@ impl LinkTrait for LinkRepository {
     async fn update(&self, link_id: Uuid, data: LinkUpdate) -> Result<Link, sqlx::Error> {
         sqlx::query_as::<_, Link>(
             r#"
-            WITH updated_link AS (
-                UPDATE links
-                SET 
-                    name = $1,
-                    slug = $2,
-                    description = $3,
-                    is_active = $4,
-                    started_at = $5,
-                    ended_at = $6
-                WHERE id = $7
-                RETURNING *
-            )
-            SELECT ul.*, u.username AS owner_username 
-            FROM updated_link ul
-            INNER JOIN users u ON ul.owner_id = u.id
+            UPDATE links
+            SET 
+                name = $1,
+                slug = $2,
+                description = $3,
+                is_active = $4,
+                started_at = $5,
+                ended_at = $6
+            WHERE id = $7
+            RETURNING *
             "#
         )
         .bind(data.name)
@@ -121,12 +106,9 @@ impl LinkTrait for LinkRepository {
     async fn delete(&self, link_id: Uuid) -> Result<Link, sqlx::Error> {
         sqlx::query_as::<_, Link>(
             r#"
-            WITH deleted_link AS (
-                DELETE FROM links WHERE id = $1 RETURNING *
-            )
-            SELECT dl.*, u.username AS owner_username 
-            FROM deleted_link dl
-            INNER JOIN users u ON dl.owner_id = u.id
+            DELETE FROM links 
+            WHERE id = $1 
+            RETURNING *
             "#
         )
         .bind(link_id)
@@ -134,7 +116,6 @@ impl LinkTrait for LinkRepository {
         .await
     }
 }
-
 
 // ==========================================
 // LOG ACTIVITY REPOSITORY

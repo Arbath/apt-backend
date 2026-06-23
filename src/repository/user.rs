@@ -4,6 +4,7 @@ use uuid::Uuid;
 use crate::{domain::repository::{TokenRepoTrait, UserRepoTrait}, models::user::{User, UserReq, UserUpdate}};
 use chrono::{DateTime, Utc};
 
+#[derive(Clone)]
 pub struct UserRepository {
     pool: PgPool,
 }

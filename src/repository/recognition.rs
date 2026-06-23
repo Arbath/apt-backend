@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::{domain::repository::RecognitionLecturerTrait, models::recognition::{RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}};
+use crate::{domain::repository::RecognitionLecturerTrait, models::recognition::{ManyRecognitionLecturer, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}};
 
 pub struct RecognitionLecturerRepository {
     pool: PgPool,
@@ -30,13 +30,12 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         .await
     }
 
-    async fn search(&self, query: RecognitionLecturerQuery) -> Result<(Vec<RecognitionLecturer>, i64), sqlx::Error> {
+    async fn search(&self,link_id: Uuid, query: RecognitionLecturerQuery) -> Result<(Vec<ManyRecognitionLecturer>, i64), sqlx::Error> {
         let limit = query.limit.unwrap_or(10) as i64;
         let page = query.page.unwrap_or(1) as i64;
         let offset = (page - 1) * limit;
 
-        // 1. Membangun dasar query dengan QueryBuilder
-        // Kita langsung menyatukan JOIN ke tabel lecturers, institutes, sp agar bisa di-filter
+        // menyatukan JOIN ke tabel lecturers, institutes, sp agar bisa di-filter
         let base_query = r#"
             FROM lecturer_recognitions lr
             INNER JOIN lecturer_recognition_categories lrc ON lr.category_id = lrc.id
@@ -49,11 +48,22 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         let mut count_qb: QueryBuilder<Postgres> = QueryBuilder::new("SELECT COUNT(lr.id) ");
         count_qb.push(base_query);
 
-        let mut data_qb: QueryBuilder<Postgres> = QueryBuilder::new("SELECT lr.*, lrc.name AS category_name ");
+        let mut data_qb: QueryBuilder<Postgres> = QueryBuilder::new(r#"SELECT lr.*, 
+        l.name AS lecturer_name,
+        l.nip AS lecturer_nip,
+        l.email AS lecturer_email,
+        l.status AS lecturer_status,
+        sp.id  AS study_prg_id,
+        sp.name  AS study_prg_name,
+        i.id  AS institute_id,
+        i.name  AS institute_name,
+        lrc.name AS category_name "#);
         data_qb.push(base_query);
 
-        // 2. Closure pembantu untuk mem-push filter ke kedua QueryBuilder sekaligus
+        // Closure pembantu untuk mem-push filter ke kedua QueryBuilder sekaligus
         let apply_filters = |qb: &mut QueryBuilder<'_, Postgres>| {
+            qb.push(" AND lr.link_id = ");
+            qb.push_bind(link_id);
             if let Some(name) = &query.name {
                 qb.push(" AND lr.description ILIKE ");
                 qb.push_bind(format!("%{}%", name));
@@ -90,10 +100,8 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         apply_filters(&mut count_qb);
         apply_filters(&mut data_qb);
 
-        // 3. Eksekusi COUNT
         let total_items: i64 = count_qb.build_query_scalar().fetch_one(&self.pool).await?;
 
-        // 4. Tambahkan ORDER BY, LIMIT, OFFSET ke data query
         match query.sort.as_deref() {
             Some("oldest") => data_qb.push(" ORDER BY lr.created_at ASC"),
             Some("newest") | _ => data_qb.push(" ORDER BY lr.created_at DESC"),
@@ -104,8 +112,7 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         data_qb.push(" OFFSET ");
         data_qb.push_bind(offset);
 
-        // 5. Eksekusi pencarian data
-        let data = data_qb.build_query_as::<RecognitionLecturer>().fetch_all(&self.pool).await?;
+        let data = data_qb.build_query_as::<ManyRecognitionLecturer>().fetch_all(&self.pool).await?;
 
         Ok((data, total_items))
     }
@@ -114,8 +121,8 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         sqlx::query_as::<_, RecognitionLecturer>(
             r#"
             WITH new_rec AS (
-                INSERT INTO lecturer_recognitions (description, proof_links, orbitaind_at, lecturer_id, category_id, status)
-                VALUES ($1, $2, $3, $4, $5, 'pending'::approval_status)
+                INSERT INTO lecturer_recognitions (description, proof_links, obtained_at, lecturer_id, category_id, link_id, status)
+                VALUES ($1, $2, $3, $4, $5, $6, 'pending'::approval_status)
                 RETURNING *
             )
             SELECT nr.*, lrc.name AS category_name
@@ -125,9 +132,10 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         )
         .bind(data.description)
         .bind(data.proof_links)
-        .bind(data.orbitaind_at)
+        .bind(data.obtained_at)
         .bind(data.lecturer_id)
         .bind(data.category_id)
+        .bind(data.link_id)
         .fetch_one(&self.pool)
         .await
     }
@@ -140,7 +148,7 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
                 SET 
                     description = COALESCE($1, description),
                     proof_links = COALESCE($2, proof_links),
-                    orbitaind_at = COALESCE($3, orbitaind_at),
+                    obtained_at = COALESCE($3, obtained_at),
                     category_id = COALESCE($4, category_id)
                 WHERE id = $5
                 RETURNING *
@@ -152,7 +160,7 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         )
         .bind(data.description)
         .bind(data.proof_links)
-        .bind(data.orbitaind_at)
+        .bind(data.obtained_at)
         .bind(data.category_id)
         .bind(recognition_id)
         .fetch_one(&self.pool)
