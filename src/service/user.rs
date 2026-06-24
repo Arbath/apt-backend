@@ -15,6 +15,18 @@ impl<U: UserRepoTrait> UserService<U>{
         Self { user_repo, config }
     }
 
+    pub async fn get_all_users(&self) -> Result<Vec<User>, AppError>{
+        let users = self.user_repo.get_all().await?;
+
+        Ok(users)
+    }
+    
+    pub async fn get_one_user(&self, user_id: &Uuid) -> Result<User, AppError>{
+        let users = self.user_repo.find_by_id(&user_id).await?;
+
+        Ok(users)
+    }
+
     pub async fn add_user(&self, user:User, data: UserReq)-> Result<(String, User), AppError>{
         if user.role != RoleUsers::ADMIN {
             return Err(AppError::Forbidden(format!("Hanya admin yang dapat menambahkan user!")));
@@ -261,6 +273,7 @@ mod tests {
             name: None,
             institute_id: None,
             role: None,
+            is_banned: None,
         };
 
         // Ekspektasi: update dipanggil 1 kali.
@@ -293,6 +306,7 @@ mod tests {
             name: None,
             institute_id: None,
             role: None,
+            is_banned: None,
         };
 
         // Pastikan database TIDAK PERNAH disentuh

@@ -9,6 +9,27 @@ use crate::repository::user::{UserRepository};
 
 type AppUserService = UserService<UserRepository>;
 
+pub async fn detail_user_hand(
+    ValidatedPath(user_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppUserService,
+) -> Result<impl IntoResponse, AppError> {  
+    let response_data = service.get_one_user(&user_id).await?;
+
+    Ok(WebResponse::ok(&uri, "Success".to_string(), response_data))
+}
+
+pub async fn all_user_hand(
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppUserService,
+) -> Result<impl IntoResponse, AppError> {  
+    let response_data = service.get_all_users().await?;
+
+    Ok(WebResponse::ok(&uri, "List semua users".to_string(), response_data))
+}
+
 pub async fn add_user_hand(
     uri: Uri,
     AuthAdmin(user): AuthAdmin,

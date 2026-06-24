@@ -50,6 +50,7 @@ pub struct UserUpdate {
     pub name: Option<String>,
     pub institute_id: Option<i32>,
     pub role: Option<RoleUsers>,
+    pub is_banned: Option<bool>,
 }
 impl UserUpdate {
     pub fn normalize(mut self) -> Self {

@@ -5,6 +5,7 @@ use crate::state::AppState;
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/recognition/{recognition_id}", get(get_recognition_detail_hand))
+        .route("/recognition", get(get_recognition_detail_hand))
         .route("/recognition/link/{link_id}", get(search_recognition_hand))
         .route("/recognition", post(create_recognition_hand))
         .route("/recognition/{recognition_id}", patch(update_recognition_hand))

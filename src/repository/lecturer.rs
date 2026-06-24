@@ -75,7 +75,7 @@ impl LecturerTrait for LecturerRepository {
             WHERE ($1::text IS NULL OR l.name ILIKE $1)
               AND ($2::text IS NULL OR sp.name ILIKE $2)
               AND ($3::text IS NULL OR i.name ILIKE $3)
-              AND ($4::approval_status IS NULL OR l.status = $4)
+              AND ($4::text IS NULL OR l.status = $4::approval_status)
             "#
         )
         .bind(&name_param)
@@ -99,9 +99,9 @@ impl LecturerTrait for LecturerRepository {
             WHERE ($1::text IS NULL OR l.name ILIKE $1)
               AND ($2::text IS NULL OR sp.name ILIKE $2)
               AND ($3::text IS NULL OR i.name ILIKE $3)
-              AND ($4::approval_status IS NULL OR l.status = $4)
+              AND ($4::text IS NULL OR l.status = $4::approval_status)
             ORDER BY l.name ASC
-            LIMIT $4 OFFSET $5
+            LIMIT $5 OFFSET $6
             "#
         )
         .bind(&name_param)

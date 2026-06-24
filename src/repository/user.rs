@@ -101,8 +101,9 @@ impl UserRepoTrait for UserRepository {
                 name = COALESCE($2, name),
                 email = COALESCE($3, email),
                 institute_id = COALESCE($4, institute_id),
-                role = COALESCE($5::role_users, role)
-            WHERE id = $6
+                role = COALESCE($5::role_users, role),
+                is_banned = COALESCE($6, is_banned)
+            WHERE id = $7
             RETURNING *
             "#
         )
@@ -111,6 +112,7 @@ impl UserRepoTrait for UserRepository {
         .bind(data.email)
         .bind(data.institute_id)
         .bind(data.role)
+        .bind(data.is_banned)
         .bind(id)
         .fetch_one(&self.pool)
         .await
