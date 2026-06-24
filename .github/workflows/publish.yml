@@ -65,6 +65,6 @@ jobs:
           if git diff-index --quiet HEAD; then
             echo "Tidak ada perubahan pada deployment.yaml. Melewati proses commit."
           else
-            git commit -m "chore(frontend): update image tag to ${{ github.sha }}"
+            git commit -m "chore(backend): update image tag to ${{ github.sha }}"
             git push origin main
           fi
