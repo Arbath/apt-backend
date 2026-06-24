@@ -2,4 +2,4 @@
 *.env
 *.pem
 
-.github/
+# .github/
