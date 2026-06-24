@@ -1,6 +1,5 @@
-FROM rust:1.92 AS builder
 # Builder
-FROM rust:1.77-bookworm as builder
+FROM rust:1.92-bookworm as builder
 WORKDIR /app
 COPY . .
 RUN cargo build --release
