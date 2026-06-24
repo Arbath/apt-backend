@@ -19,28 +19,28 @@ use core::time::Duration;
 use crate::{state::AppState};
 
 pub fn create_app(state: AppState) -> Router {
-    let cors = state.app_config.cors.clone();
+    // let cors = state.app_config.cors.clone();
     let uncors = CorsLayer::permissive();
     
     Router::new()
         .merge(home::routes().layer(uncors.clone()))
         .nest("/api",auth::routes()
-            .layer(cors.clone())
+            .layer(uncors.clone())
         )
         .nest("/api",user::routes()
-            .layer(cors.clone())
+            .layer(uncors.clone())
         )
         .nest("/api",institute::routes()
-            .layer(cors.clone())
+            .layer(uncors.clone())
         )
         .nest("/api",lecturer::routes()
-            .layer(cors.clone())
+            .layer(uncors.clone())
         )
         .nest("/api",recognition::routes()
-            .layer(cors.clone())
+            .layer(uncors.clone())
         )
         .nest("/api",feature::routes()
-            .layer(cors.clone())
+            .layer(uncors.clone())
         )
 
         .with_state(state)
