@@ -19,30 +19,26 @@ use core::time::Duration;
 use crate::{state::AppState};
 
 pub fn create_app(state: AppState) -> Router {
-    // let cors = state.app_config.cors.clone();
+    let cors = state.app_config.cors.clone();
     let uncors = CorsLayer::permissive();
+
+    // cors endpoint
+    let api_routes = Router::new()
+        .merge(auth::routes())
+        .merge(user::routes())
+        .merge(institute::routes())
+        .merge(lecturer::routes())
+        .merge(recognition::routes())
+        .merge(feature::routes())
+        .layer(cors);
+
+    // uncors endpoint
+    let home_routes = home::routes()
+        .layer(uncors);
     
     Router::new()
-        .merge(home::routes().layer(uncors.clone()))
-        .nest("/api",auth::routes()
-            .layer(uncors.clone())
-        )
-        .nest("/api",user::routes()
-            .layer(uncors.clone())
-        )
-        .nest("/api",institute::routes()
-            .layer(uncors.clone())
-        )
-        .nest("/api",lecturer::routes()
-            .layer(uncors.clone())
-        )
-        .nest("/api",recognition::routes()
-            .layer(uncors.clone())
-        )
-        .nest("/api",feature::routes()
-            .layer(uncors.clone())
-        )
-
+        .merge(home_routes)
+        .nest("/api", api_routes)
         .with_state(state)
 
         // Logging
