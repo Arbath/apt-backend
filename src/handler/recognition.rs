@@ -20,7 +20,6 @@ pub async fn get_recognition_detail_hand(
 }
 
 pub async fn search_recognition_hand(
-    ValidatedPath(link_id): ValidatedPath<Uuid>,
     Query(query): Query<RecognitionLecturerQuery>,
     uri: Uri,
     AuthUser(_): AuthUser,
@@ -28,7 +27,7 @@ pub async fn search_recognition_hand(
 ) -> Result<impl IntoResponse, AppError> {
     let page = query.page.unwrap_or(1);
     let limit = query.limit.unwrap_or(10);
-    let (response_data, total_items) = service.search_recongnition(link_id, query).await?;
+    let (response_data, total_items) = service.search_recongnition(query).await?;
     let total_pages = (total_items as f64 / limit as f64).ceil() as u64;
     let meta = PaginationMeta {
         current_page: page,

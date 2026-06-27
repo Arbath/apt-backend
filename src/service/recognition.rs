@@ -33,8 +33,8 @@ impl <U: UserRepoTrait,R:RecognitionLecturerTrait, > LecturerRecognitionService<
         Ok(response)
     }
 
-    pub async fn search_recongnition(&self,link_id: Uuid, query: RecognitionLecturerQuery) -> Result<(Vec<ManyRecognitionLecturer>, i64), AppError> {
-        let recognition = self.recognition_repo.search(link_id, query)
+    pub async fn search_recongnition(&self, query: RecognitionLecturerQuery) -> Result<(Vec<ManyRecognitionLecturer>, i64), AppError> {
+        let recognition = self.recognition_repo.search(query)
             .await.map_err(|_|AppError::BadRequest("Terjadi kesalahan pada keyword pencarian!".to_string()))?;
 
         Ok(recognition)

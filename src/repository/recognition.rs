@@ -30,7 +30,7 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         .await
     }
 
-    async fn search(&self,link_id: Uuid, query: RecognitionLecturerQuery) -> Result<(Vec<ManyRecognitionLecturer>, i64), sqlx::Error> {
+    async fn search(&self, query: RecognitionLecturerQuery) -> Result<(Vec<ManyRecognitionLecturer>, i64), sqlx::Error> {
         let limit = query.limit.unwrap_or(10) as i64;
         let page = query.page.unwrap_or(1) as i64;
         let offset = (page - 1) * limit;
@@ -62,8 +62,10 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
 
         // Closure pembantu untuk mem-push filter ke kedua QueryBuilder sekaligus
         let apply_filters = |qb: &mut QueryBuilder<'_, Postgres>| {
-            qb.push(" AND lr.link_id = ");
-            qb.push_bind(link_id);
+            if let Some(link_id) = &query.link_id {
+                qb.push(" AND lr.link_id = ");
+                qb.push_bind(link_id.clone());
+            }
             if let Some(name) = &query.name {
                 qb.push(" AND lr.description ILIKE ");
                 qb.push_bind(format!("%{}%", name));

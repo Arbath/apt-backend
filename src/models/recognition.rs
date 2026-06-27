@@ -159,6 +159,7 @@ pub struct RecognitionLecturerQuery{
     pub institute: Option<String>,
     pub status: Option<String>,
     pub category: Option<String>,
+    pub link_id: Option<Uuid>,
     pub sort: Option<String>,
     pub limit: Option<u64>,
     pub page: Option<u64>,
