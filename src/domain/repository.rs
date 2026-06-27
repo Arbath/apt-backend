@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use crate::models::{feature::{Link, LinkCreate, LinkUpdate, LogActivity}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
+use crate::models::{accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evalution, EvalutionCreate, EvalutionUpdate, Indicator, IndicatorCreate, IndicatorUpdate}, feature::{Link, LinkCreate, LinkUpdate, LogActivity}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -100,4 +100,44 @@ pub trait LinkTrait: Send + Sync {
 pub trait LogActivityTrait: Send + Sync {
     async fn create(&self, user_id: Uuid, activity: String) -> Result<LogActivity, sqlx::Error>;
     async fn delete(&self, log_id: Uuid) -> Result<LogActivity, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait AccreditationTrait: Send + Sync {
+    async fn find_by_id(&self, accreditation_id: Uuid) -> Result<Accreditation, sqlx::Error>;
+    async fn find_all(&self) -> Result<Vec<Accreditation>, sqlx::Error>;
+    async fn create(&self, accreditation_id: Uuid, data: AccreditationCreate) -> Result<Accreditation, sqlx::Error>;
+    async fn update(&self, accreditation_id: Uuid, data: AccreditationUpdate) -> Result<Accreditation, sqlx::Error>;
+    async fn delete(&self, accreditation_id: Uuid) -> Result<Accreditation, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait IndicatorTrait: Send + Sync {
+    async fn find_by_id(&self, indicator_id: Uuid) -> Result<Indicator, sqlx::Error>;
+    async fn find_all(&self) -> Result<Vec<Indicator>, sqlx::Error>;
+    async fn create(&self, data: IndicatorCreate) -> Result<Indicator, sqlx::Error>;
+    async fn update(&self, indicator_id: Uuid, data: IndicatorUpdate) -> Result<Indicator, sqlx::Error>;
+    async fn delete(&self, indicator_id: Uuid) -> Result<Indicator, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait CalculationRuleTrait: Send + Sync {
+    async fn find_by_id(&self, rule_id: Uuid) -> Result<CalculationRule, sqlx::Error>;
+    async fn find_all(&self) -> Result<Vec<CalculationRule>, sqlx::Error>;
+    async fn create(&self, data: CalculationRuleCreate) -> Result<CalculationRule, sqlx::Error>;
+    async fn update(&self, rule_id: Uuid, data: CalculationRuleUpdate) -> Result<CalculationRule, sqlx::Error>;
+    async fn delete(&self, rule_id: Uuid) -> Result<CalculationRule, sqlx::Error>;
+}
+
+#[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
+#[async_trait]
+pub trait EvalutionTrait: Send + Sync {
+    async fn find_by_id(&self, evalution_id: Uuid) -> Result<Evalution, sqlx::Error>;
+    async fn find_all(&self) -> Result<Vec<Evalution>, sqlx::Error>;
+    async fn create(&self, data: EvalutionCreate) -> Result<Evalution, sqlx::Error>;
+    async fn update(&self, evalution_id: Uuid, data: EvalutionUpdate) -> Result<Evalution, sqlx::Error>;
+    async fn delete(&self, evalution_id: Uuid) -> Result<Evalution, sqlx::Error>;
 }
