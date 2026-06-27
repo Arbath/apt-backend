@@ -127,7 +127,7 @@ pub struct RecognitionLecturerCreate {
     pub obtained_at: DateTime<Utc>,
     pub lecturer_id: Uuid,
     pub category_id: i32,
-    pub link_id: Uuid,
+    pub link_id: Option<Uuid>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
