@@ -2,7 +2,7 @@ use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use uuid::Uuid;
 
-use crate::{domain::repository::{InstituteTrait, LecturerTrait, StudyProgramTrait, UserRepoTrait}, models::lecturer::{Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, repository::{institute::InstituteRepository, lecturer::LecturerRepository, study_program::StudyProgramRepository, user::UserRepository}, state::{AppConfig, AppState}, utils::response::AppError};
+use crate::{domain::repository::{InstituteTrait, LecturerTrait, StudyProgramTrait, UserRepoTrait}, models::{lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, user::{RoleUsers, User}}, repository::{institute::InstituteRepository, lecturer::LecturerRepository, study_program::StudyProgramRepository, user::UserRepository}, state::{AppConfig, AppState}, utils::response::AppError};
 
 #[allow(dead_code)]
 pub struct LecturerService<U: UserRepoTrait, L:LecturerTrait, I: InstituteTrait, SP:StudyProgramTrait> {
@@ -39,9 +39,15 @@ impl <U: UserRepoTrait, L:LecturerTrait, I: InstituteTrait, SP:StudyProgramTrait
         Ok(q)
     }
 
-    pub async fn add_lecturer(&self, data: LecturerCreate) -> Result<Lecturer, AppError> {
+    pub async fn add_lecturer(&self, user: Option<User>, data: LecturerCreate) -> Result<Lecturer, AppError> {
         let lecturer_nip = data.nip.clone();
-        let lecturer = match self.lecturer_repo.create(data).await {
+        let approval_status = match user {
+            Some(u) if u.role != RoleUsers::ASESOR && u.role != RoleUsers::AUDITOR => {
+                ApprovalStatus::APPROVED
+            },
+            _ => ApprovalStatus::PENDING,
+        };
+        let lecturer = match self.lecturer_repo.create(approval_status, data).await {
             Ok(lecturer) => lecturer,
             Err(e) => {
                 match e {

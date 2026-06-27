@@ -2,7 +2,7 @@ use axum::{extract::Query, response::IntoResponse};
 use http::Uri;
 use uuid::Uuid;
 
-use crate::{middleware::auth::{AuthAdminOrAuditee, AuthUser}, models::lecturer::{LecturerCreate, LecturerQuery, LecturerResponse, LecturerUpdate}, repository::{institute::InstituteRepository, lecturer::LecturerRepository, study_program::StudyProgramRepository, user::UserRepository}, service::lecturer::LecturerService, utils::{request::{ValidatedJson, ValidatedPath}, response::{AppError, PaginationMeta, WebResponse}}};
+use crate::{middleware::auth::{AuthAdminOrAuditee, AuthUser, OptionalUser}, models::lecturer::{LecturerCreate, LecturerQuery, LecturerResponse, LecturerUpdate}, repository::{institute::InstituteRepository, lecturer::LecturerRepository, study_program::StudyProgramRepository, user::UserRepository}, service::lecturer::LecturerService, utils::{request::{ValidatedJson, ValidatedPath}, response::{AppError, PaginationMeta, WebResponse}}};
 
 type AppLecturerService = LecturerService<UserRepository, LecturerRepository, InstituteRepository, StudyProgramRepository>;
 
@@ -58,11 +58,12 @@ pub async fn search_lecturer_hand(
 
 pub async fn add_lecturer_hand(
     uri: Uri,
+    OptionalUser(user): OptionalUser,
     service: AppLecturerService,
     ValidatedJson(data): ValidatedJson<LecturerCreate>
 ) -> Result<impl IntoResponse, AppError> {  
-    let response_data = service.add_lecturer(data).await?;
-    let message= format!("Dosen bernama '{}' berhasi diajukan.", response_data.name);
+    let response_data = service.add_lecturer(user, data).await?;
+    let message= format!("Dosen bernama '{}' berhasi diajukan!", response_data.name);
     let response: LecturerResponse = response_data.into();
 
     Ok(WebResponse::created(&uri, message, response))

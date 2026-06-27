@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::{domain::repository::RecognitionLecturerTrait, models::recognition::{ManyRecognitionLecturer, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}};
+use crate::{domain::repository::RecognitionLecturerTrait, models::{lecturer::ApprovalStatus, recognition::{ManyRecognitionLecturer, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}}};
 
 pub struct RecognitionLecturerRepository {
     pool: PgPool,
@@ -119,12 +119,12 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         Ok((data, total_items))
     }
 
-    async fn create(&self, data: RecognitionLecturerCreate) -> Result<RecognitionLecturer, sqlx::Error> {
+    async fn create(&self, approval_status: ApprovalStatus, data: RecognitionLecturerCreate) -> Result<RecognitionLecturer, sqlx::Error> {
         sqlx::query_as::<_, RecognitionLecturer>(
             r#"
             WITH new_rec AS (
                 INSERT INTO lecturer_recognitions (description, proof_links, obtained_at, lecturer_id, category_id, link_id, status)
-                VALUES ($1, $2, $3, $4, $5, $6, 'pending'::approval_status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
             )
             SELECT nr.*, lrc.name AS category_name
@@ -138,6 +138,7 @@ impl RecognitionLecturerTrait for RecognitionLecturerRepository {
         .bind(data.lecturer_id)
         .bind(data.category_id)
         .bind(data.link_id)
+        .bind(approval_status)
         .fetch_one(&self.pool)
         .await
     }

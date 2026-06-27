@@ -2,7 +2,7 @@ use axum::{extract::Query, response::IntoResponse};
 use http::Uri;
 use uuid::Uuid;
 
-use crate::{middleware::auth::{AuthAdminOrAuditor, AuthUser}, models::recognition::{RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerResponse, RecognitionLecturerUpdate}, repository::{recognition::RecognitionLecturerRepository, recognition_category::RecognitionCategoryRepository, user::UserRepository}, service::recognition::{LecturerRecognitionService, RecognitionCatService}, utils::{request::{ValidatedJson, ValidatedPath}, response::{AppError, PaginationMeta, WebResponse}}};
+use crate::{middleware::auth::{AuthAdminOrAuditor, AuthUser, OptionalUser}, models::recognition::{RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerResponse, RecognitionLecturerUpdate}, repository::{recognition::RecognitionLecturerRepository, recognition_category::RecognitionCategoryRepository, user::UserRepository}, service::recognition::{LecturerRecognitionService, RecognitionCatService}, utils::{request::{ValidatedJson, ValidatedPath}, response::{AppError, PaginationMeta, WebResponse}}};
 
 type AppRecongnitionService = LecturerRecognitionService<UserRepository, RecognitionLecturerRepository>;
 type AppRecongnitionCatService = RecognitionCatService<UserRepository, RecognitionCategoryRepository>;
@@ -46,10 +46,11 @@ pub async fn search_recognition_hand(
 
 pub async fn create_recognition_hand(
     uri: Uri,
+    OptionalUser(user): OptionalUser,
     service: AppRecongnitionService,
     ValidatedJson(data):ValidatedJson<RecognitionLecturerCreate>
 ) -> Result<impl IntoResponse, AppError> {  
-    let response_data = service.create_recognition(data).await?;
+    let response_data = service.create_recognition(user, data).await?;
     let message= format!("Rekognisi '{}' berhasil diajukan", response_data.id);
 
     Ok(WebResponse::created(&uri, message, response_data))

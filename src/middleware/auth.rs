@@ -1,13 +1,31 @@
 use axum::{extract::FromRequestParts, http::{request::Parts, header}};
 use chrono::Utc;
+use http::header::AUTHORIZATION;
 use crate::{models::user::RoleUsers, state::AppState};
 use crate::utils::{response::*, auth::verify_access_token};
 use crate::models::{user::User, auth::CheckApiKey}; 
 
+pub struct OptionalUser(pub Option<User>);
 pub struct AuthUser(pub User);
 pub struct AuthAdmin(pub User);
 pub struct AuthAdminOrAuditee(pub User);
 pub struct AuthAdminOrAuditor(pub User);
+
+impl FromRequestParts<AppState> for OptionalUser {
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, Self::Rejection> {
+        if parts.headers.contains_key(AUTHORIZATION) {
+            match fetch_user_from_request(parts, state).await {
+                Ok(user) => Ok(OptionalUser(Some(user))),
+                Err(_) => Ok(OptionalUser(None)), 
+            }
+            
+        } else {
+            Ok(OptionalUser(None))
+        }
+    }
+}
 
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = AppError;

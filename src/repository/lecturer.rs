@@ -116,12 +116,12 @@ impl LecturerTrait for LecturerRepository {
         Ok((data, total_items))
     }
 
-    async fn create(&self, data: LecturerCreate) -> Result<Lecturer, sqlx::Error> {
+    async fn create(&self, approval_status: ApprovalStatus, data: LecturerCreate) -> Result<Lecturer, sqlx::Error> {
         sqlx::query_as::<_, Lecturer>(
             r#"
             WITH new_lecturer AS (
-                INSERT INTO lecturers (name, nip, email, study_program_id)
-                VALUES ($1, $2, $3, $4)
+                INSERT INTO lecturers (name, nip, email, study_program_id, status)
+                VALUES ($1, $2, $3, $4, $5)
                 RETURNING *
             )
             SELECT 
@@ -139,6 +139,7 @@ impl LecturerTrait for LecturerRepository {
         .bind(data.nip)
         .bind(data.email)
         .bind(data.study_program_id)
+        .bind(approval_status)
         .fetch_one(&self.pool)
         .await
     }

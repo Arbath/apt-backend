@@ -40,12 +40,18 @@ impl <U: UserRepoTrait,R:RecognitionLecturerTrait, > LecturerRecognitionService<
         Ok(recognition)
     }
 
-    pub async fn create_recognition(&self, data: RecognitionLecturerCreate) -> Result<RecognitionLecturerResponse, AppError> {
+    pub async fn create_recognition(&self, user: Option<User>, data: RecognitionLecturerCreate) -> Result<RecognitionLecturerResponse, AppError> {
         let lecturer = self.lecturer_service.get_lecturer_detail(data.lecturer_id.clone()).await?;
         if lecturer.status != ApprovalStatus::APPROVED {
             return Err(AppError::Forbidden(format!("Dosen dengan NIP {} belum diperbolehkan mengisi forms!", lecturer.nip)));
         }
-        let recognition = match self.recognition_repo.create(data).await {
+        let approval_status = match user {
+            Some(u) if u.role != RoleUsers::ASESOR && u.role != RoleUsers::AUDITOR => {
+                ApprovalStatus::APPROVED
+            },
+            _ => ApprovalStatus::PENDING,
+        };
+        let recognition = match self.recognition_repo.create(approval_status ,data).await {
             Ok(recognition) => recognition,
             Err(e) => {
                 match e {

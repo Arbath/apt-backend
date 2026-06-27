@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
-use crate::models::{feature::{Link, LinkCreate, LinkUpdate, LogActivity}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
+use crate::models::{feature::{Link, LinkCreate, LinkUpdate, LogActivity}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -54,7 +54,7 @@ pub trait LecturerTrait: Send + Sync {
     async fn find_by_id(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
     async fn find_by_nip(&self, lecturer_nip: String) -> Result<Lecturer, sqlx::Error>;
     async fn search(&self, query: LecturerQuery) -> Result<(Vec<Lecturer>, i64), sqlx::Error>;
-    async fn create(&self, data: LecturerCreate) -> Result<Lecturer, sqlx::Error>;
+    async fn create(&self, approval_status: ApprovalStatus, data: LecturerCreate) -> Result<Lecturer, sqlx::Error>;
     async fn update(&self, lecturer_id: Uuid, data: LecturerUpdate) -> Result<Lecturer, sqlx::Error>;
     async fn delete(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
     async fn approve(&self, lecturer_id: Uuid) -> Result<Lecturer, sqlx::Error>;
@@ -66,7 +66,7 @@ pub trait LecturerTrait: Send + Sync {
 pub trait RecognitionLecturerTrait: Send + Sync {
     async fn find_by_id(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
     async fn search(&self, query: RecognitionLecturerQuery) -> Result<(Vec<ManyRecognitionLecturer>, i64), sqlx::Error>;
-    async fn create(&self, data: RecognitionLecturerCreate) -> Result<RecognitionLecturer, sqlx::Error>;
+    async fn create(&self, aproval_status: ApprovalStatus, data: RecognitionLecturerCreate) -> Result<RecognitionLecturer, sqlx::Error>;
     async fn update(&self, recognition_id: Uuid, data: RecognitionLecturerUpdate) -> Result<RecognitionLecturer, sqlx::Error>;
     async fn delete(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
     async fn approve(&self, recognition_id: Uuid) -> Result<RecognitionLecturer, sqlx::Error>;
