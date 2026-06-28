@@ -5,6 +5,7 @@ pub mod institute;
 pub mod lecturer;
 pub mod recognition;
 pub mod feature;
+pub mod accreditation;
 
 use axum::Router;
 use tower_http::{
@@ -30,6 +31,7 @@ pub fn create_app(state: AppState) -> Router {
         .merge(lecturer::routes())
         .merge(recognition::routes())
         .merge(feature::routes())
+        .merge(accreditation::routes())
         .layer(cors);
 
     // uncors endpoint

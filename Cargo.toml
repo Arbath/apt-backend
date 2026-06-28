@@ -36,6 +36,7 @@ http = "1.4.0"
 # Testing
 async-trait = "0.1.89"
 mockall = "0.14.0"
+tokio-util = "0.7.18"
 
 [features]
 test-utils = [] 

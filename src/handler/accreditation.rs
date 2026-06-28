@@ -1,0 +1,261 @@
+use axum::{extract::Query, response::IntoResponse};
+use http::Uri;
+use uuid::Uuid;
+
+use crate::{middleware::auth::{AuthAdmin, AuthAdminOrAuditee, AuthUser}, models::accreditation::{AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRuleCreate, CalculationRuleUpdate, EvaluationCreate, EvaluationQuery, EvaluationUpdate, IndicatorCreate, IndicatorQuery, IndicatorUpdate}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, service::accreditation::AccreditationService, utils::{request::{ValidatedJson, ValidatedPath}, response::{ApiError, PaginationMeta, WebResponse}}};
+
+type AppAccreditation = AccreditationService<AccreditationRepository, IndicatorRepository, CalculationRuleRepository, EvaluationRepository>;
+
+// ACCREDITATION
+pub async fn get_accreditation_detail(
+    ValidatedPath(accreditation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_accr_detail(accreditation_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail akreditasi".to_string(), data))
+}
+
+pub async fn get_all_accreditation(
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_accr_all().await.map_err(|e|e.with_path(&uri))?;
+
+    Ok(WebResponse::ok(&uri, "List semua Akreditasi".to_string(), data))
+}
+
+pub async fn create_accreditation(
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<AccreditationCreate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.add_accr(data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::created(&uri, "Akreditasi berhasil dibuat!".to_string(), data))
+}
+
+pub async fn update_accreditation(
+    ValidatedPath(accreditation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<AccreditationUpdate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.edit_accr(accreditation_id, data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Akreditasi berhasil diperbarui!".to_string(), data))
+}
+
+pub async fn delete_accreditation(
+    ValidatedPath(accreditation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.remove_accr(accreditation_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Akreditasi berhasil dihapus!".to_string(), data))
+}
+
+// INDICATOR
+pub async fn get_indicator_detail(
+    ValidatedPath(indicator_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_indicator_detail(indicator_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail indikator akreditasi".to_string(), data))
+}
+
+pub async fn search_indicator(
+    Query(query): Query<IndicatorQuery>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(10);
+    let (data, total_items) = service.search_indicator(query).await.map_err(|e|e.with_path(&uri))?;
+    let total_pages = (total_items as f64 / limit as f64).ceil() as u64;
+    let meta = PaginationMeta {
+        current_page: page,
+        limit_page: limit,
+        total_items: total_items as u64,
+        total_pages
+    };
+
+    Ok(WebResponse::ok_paginated(&uri, "Hasil pencarian indikator akreditasi".to_string(), data, meta))
+}
+
+pub async fn create_indicator(
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<IndicatorCreate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.add_indicator(data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::created(&uri, "Indikator akreditasi berhasil dibuat!".to_string(), data))
+}
+
+pub async fn update_indicator(
+    ValidatedPath(indicator_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<IndicatorUpdate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.edit_indicator(indicator_id, data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Indikator akreditasi berhasil diperbarui!".to_string(), data))
+}
+
+pub async fn delete_indicator(
+    ValidatedPath(indicator_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.remove_indicator(indicator_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Indikator akreditasi berhasil dihapus!".to_string(), data))
+}
+
+// CALCULATION
+pub async fn get_calculation_detail(
+    ValidatedPath(rule_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_calculation_detail(rule_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail kalkulasi indikator akreditasi".to_string(), data))
+}
+
+pub async fn search_calculation(
+    Query(query): Query<CalculationQuery>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(10);
+    let (data, total_items) = service.search_calculation(query).await.map_err(|e|e.with_path(&uri))?;
+    let total_pages = (total_items as f64 / limit as f64).ceil() as u64;
+    let meta = PaginationMeta {
+        current_page: page,
+        limit_page: limit,
+        total_items: total_items as u64,
+        total_pages
+    };
+
+    Ok(WebResponse::ok_paginated(&uri, "Hasil pencarian kalkulasi indikator akreditasi".to_string(), data, meta))
+}
+
+pub async fn create_calculation(
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<CalculationRuleCreate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.add_calculation(data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::created(&uri, "Kalkulasi indikator akreditasi berhasil dibuat!".to_string(), data))
+}
+
+pub async fn update_calculation(
+    ValidatedPath(rule_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<CalculationRuleUpdate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.edit_calculation(rule_id, data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Kalkulasi indikator akreditasi berhasil diperbarui!".to_string(), data))
+}
+
+pub async fn delete_calculation(
+    ValidatedPath(rule_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.remove_calculation(rule_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Kalkulasi indikator akreditasi berhasil dihapus!".to_string(), data))
+}
+
+// EVALUATION
+pub async fn get_evaluation_detail(
+    ValidatedPath(evaluation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_evaluation_detail(evaluation_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail evaluasi indikator akreditasi".to_string(), data))
+}
+
+pub async fn search_evaluation(
+    Query(query): Query<EvaluationQuery>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let page = query.page.unwrap_or(1);
+    let limit = query.limit.unwrap_or(10);
+    let (data, total_items) = service.search_evaluation(query).await.map_err(|e|e.with_path(&uri))?;
+    let total_pages = (total_items as f64 / limit as f64).ceil() as u64;
+    let meta = PaginationMeta {
+        current_page: page,
+        limit_page: limit,
+        total_items: total_items as u64,
+        total_pages
+    };
+
+    Ok(WebResponse::ok_paginated(&uri, "Hasil pencarian evaluasi indikator akreditasi".to_string(), data, meta))
+}
+
+pub async fn create_evaluation(
+    uri: Uri,
+    AuthAdminOrAuditee(_): AuthAdminOrAuditee,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<EvaluationCreate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.add_evaluation(data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::created(&uri, "Evaluasi indikator akreditasi berhasil dibuat!".to_string(), data))
+}
+
+pub async fn update_evaluation(
+    ValidatedPath(evaluation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+    ValidatedJson(data): ValidatedJson<EvaluationUpdate>,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.edit_evaluation(evaluation_id, data).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Evaluasi indikator akreditasi berhasil diperbarui!".to_string(), data))
+}
+
+pub async fn delete_evaluation(
+    ValidatedPath(evaluation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthAdmin(_): AuthAdmin,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.remove_evaluation(evaluation_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Evaluasi indikator akreditasi berhasil dihapus!".to_string(), data))
+}
