@@ -4,3 +4,4 @@ pub mod institute;
 pub mod lecturer;
 pub mod recognition;
 pub mod feature;
+pub mod accreditation;

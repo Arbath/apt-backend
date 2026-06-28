@@ -28,6 +28,13 @@ pub struct User {
     pub created_at: DateTime<Utc>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserNested{
+    pub id: Uuid, 
+    pub name: String,
+    pub email: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct UserReq {
     pub username: String,

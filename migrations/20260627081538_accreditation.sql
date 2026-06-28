@@ -48,7 +48,7 @@ CREATE TABLE accreditation_indicators (
     number VARCHAR(50) NOT NULL,
     name TEXT NOT NULL,
     criteria accreditation_criteria NOT NULL,
-    quality quality_target NOT NULL,
+    target quality_target NOT NULL,
     justification TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -95,7 +95,7 @@ CREATE TABLE accreditation_evaluations (
 
 -- berdasarkan kriteria, sasaran mutu, atau nomor indikator
 CREATE INDEX idx_accreditation_criteria ON accreditation_indicators(criteria);
-CREATE INDEX idx_accreditation_quality ON accreditation_indicators(quality);
+CREATE INDEX idx_accreditation_target ON accreditation_indicators(target);
 CREATE INDEX idx_accreditation_number ON accreditation_indicators(number);
 
 -- Function untuk mengubah updated_at secara otomatis

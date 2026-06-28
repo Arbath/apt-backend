@@ -5,3 +5,7 @@ pub mod lecturer;
 pub mod recognition;
 pub mod recognition_category;
 pub mod feature;
+pub mod accreditation;
+pub mod indicator;
+pub mod calculation;
+pub mod evaluation;
