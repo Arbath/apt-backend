@@ -42,7 +42,7 @@ impl <U: UserRepoTrait, L:LecturerTrait, I: InstituteTrait, SP:StudyProgramTrait
     pub async fn add_lecturer(&self, user: Option<User>, data: LecturerCreate) -> Result<Lecturer, AppError> {
         let lecturer_nip = data.nip.clone();
         let approval_status = match user {
-            Some(u) if u.role != RoleUsers::ASESOR && u.role != RoleUsers::AUDITOR => {
+            Some(u) if u.role != RoleUsers::ASSESSOR && u.role != RoleUsers::AUDITOR => {
                 ApprovalStatus::APPROVED
             },
             _ => ApprovalStatus::PENDING,

@@ -46,7 +46,7 @@ impl <U: UserRepoTrait,R:RecognitionLecturerTrait, > LecturerRecognitionService<
             return Err(AppError::Forbidden(format!("Dosen dengan NIP {} belum diperbolehkan mengisi forms!", lecturer.nip)));
         }
         let approval_status = match user {
-            Some(u) if u.role != RoleUsers::ASESOR && u.role != RoleUsers::AUDITOR => {
+            Some(u) if u.role != RoleUsers::ASSESSOR && u.role != RoleUsers::AUDITOR => {
                 ApprovalStatus::APPROVED
             },
             _ => ApprovalStatus::PENDING,
@@ -90,7 +90,7 @@ impl <U: UserRepoTrait,R:RecognitionLecturerTrait, > LecturerRecognitionService<
     }
 
     pub async fn approve_recongnition(&self, user: User, recognition_id: Uuid) -> Result<RecognitionLecturerResponse, AppError> {
-        if user.role == RoleUsers::ASESOR {
+        if user.role == RoleUsers::ASSESSOR {
             return Err(AppError::Forbidden("Assesor tidak diperbolehkan untuk melakukan aksi ini.".to_string()))
         }
         let recognition = self.recognition_repo.approve(recognition_id).await?;
@@ -101,7 +101,7 @@ impl <U: UserRepoTrait,R:RecognitionLecturerTrait, > LecturerRecognitionService<
     }
 
     pub async fn reject_recongnition(&self, user: User, recognition_id: Uuid) -> Result<RecognitionLecturerResponse, AppError> {
-        if user.role == RoleUsers::ASESOR {
+        if user.role == RoleUsers::ASSESSOR {
             return Err(AppError::Forbidden("Assesor tidak diperbolehkan untuk melakukan aksi ini.".to_string()))
         }
         let recognition = self.recognition_repo.reject(recognition_id).await?;

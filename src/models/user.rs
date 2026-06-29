@@ -9,7 +9,7 @@ use uuid::Uuid;
 pub enum RoleUsers {
     AUDITEE,
     AUDITOR,
-    ASESOR,
+    ASSESSOR,
     ADMIN
 }
 
