@@ -10,4 +10,9 @@ pub fn routes() -> Router<AppState> {
         .route("/link", post(create_link_hand))
         .route("/link/{link_id}", patch(update_link_hand))
         .route("/link/{link_id}", delete(delete_link_hand))
+
+        .route("/log",get(search_logs))
+        .route("/log/{log_id}", get(get_log_detail))
+        .route("/log/{log_id}",delete(delete_log))
+        .route("/log-older-than/{days}",delete(delete_logs))
 }

@@ -1,8 +1,9 @@
 use async_trait::async_trait;
-use sqlx::PgPool;
+use chrono::{Duration, Utc};
+use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::{domain::repository::{LinkTrait, LogActivityTrait}, models::feature::{Link, LinkCreate, LinkUpdate, LogActivity}};
+use crate::{domain::repository::{LinkTrait, LogActivityTrait}, models::feature::{Link, LinkCreate, LinkUpdate, LogActivity, LogActivityQuery}};
 
 // ==========================================
 // LINK REPOSITORY
@@ -133,11 +134,79 @@ impl LogActivityRepository {
 
 #[async_trait]
 impl LogActivityTrait for LogActivityRepository {
+    async fn find_by_id(&self, log_id: Uuid) -> Result<LogActivity, sqlx::Error> {
+        sqlx::query_as::<_, LogActivity>(
+            r#"
+            SELECT l.*, u.username AS user_username 
+            FROM logs l
+            INNER JOIN users u ON l.user_id = u.id
+            WHERE l.id = $1
+            "#
+        )
+        .bind(log_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn search(&self, query: LogActivityQuery) -> Result<(Vec<LogActivity>, i64), sqlx::Error> {
+        let limit = query.limit.unwrap_or(10) as i64;
+        let page = query.page.unwrap_or(1) as i64;
+        let offset = (page - 1) * limit;
+
+        let base_query = r#"
+            FROM logs l
+            INNER JOIN users u ON l.user_id = u.id
+            WHERE 1=1
+        "#;
+
+        let mut count_qb: QueryBuilder<Postgres> = QueryBuilder::new("SELECT COUNT(l.id) ");
+        count_qb.push(base_query);
+
+        let mut data_qb: QueryBuilder<Postgres> = QueryBuilder::new(
+            "SELECT l.*, u.username AS user_username "
+        );
+        data_qb.push(base_query);
+
+        let apply_filters = |qb: &mut QueryBuilder<'_, Postgres>| {
+            if let Some(activity) = &query.activity {
+                qb.push(" AND l.activity ILIKE ");
+                qb.push_bind(format!("%{}%", activity)); 
+            }
+            if let Some(user_id) = &query.user_id {
+                qb.push(" AND l.user_id = ");
+                qb.push_bind(user_id.clone());
+            }
+            if let Some(username) = &query.username {
+                qb.push(" AND u.username ILIKE ");
+                qb.push_bind(format!("%{}%", username)); 
+            }
+            if let Some(created_at) = &query.created_at {
+                qb.push(" AND l.created_at >= ");
+                qb.push_bind(created_at.clone());
+            }
+        };
+
+        apply_filters(&mut count_qb);
+        apply_filters(&mut data_qb);
+
+        let total_items: i64 = count_qb.build_query_scalar().fetch_one(&self.pool).await?;
+
+        data_qb.push(" ORDER BY l.created_at DESC");
+        data_qb.push(" LIMIT ");
+        data_qb.push_bind(limit);
+        data_qb.push(" OFFSET ");
+        data_qb.push_bind(offset);
+
+        let data = data_qb.build_query_as::<LogActivity>().fetch_all(&self.pool).await?;
+
+        Ok((data, total_items))
+    }
+
     async fn create(&self, user_id: Uuid, activity: String) -> Result<LogActivity, sqlx::Error> {
         sqlx::query_as::<_, LogActivity>(
             r#"
             WITH new_log AS (
-                INSERT INTO log_activities (user_id, activity)
+                INSERT INTO logs (user_id, activity)
                 VALUES ($1, $2)
                 RETURNING *
             )
@@ -156,7 +225,7 @@ impl LogActivityTrait for LogActivityRepository {
         sqlx::query_as::<_, LogActivity>(
             r#"
             WITH deleted_log AS (
-                DELETE FROM log_activities WHERE id = $1 RETURNING *
+                DELETE FROM logs WHERE id = $1 RETURNING *
             )
             SELECT dl.*, u.username AS user_username 
             FROM deleted_log dl
@@ -166,5 +235,20 @@ impl LogActivityTrait for LogActivityRepository {
         .bind(log_id)
         .fetch_one(&self.pool)
         .await
+    }
+
+    async fn delete_older_than_days(&self, days: i64) -> Result<u64, sqlx::Error> {
+        let threshold_date = Utc::now() - Duration::try_days(days).unwrap_or_default();
+
+        let result = sqlx::query(
+            r#"
+            DELETE FROM logs 
+            WHERE created_at < $1
+            "#
+        )
+        .bind(threshold_date)
+        .execute(&self.pool)
+        .await?;
+        Ok(result.rows_affected())
     }
 }

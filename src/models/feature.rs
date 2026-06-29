@@ -46,3 +46,13 @@ pub struct LogActivity{
     pub user_username: String,
     pub created_at: DateTime<Utc>,
 }
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct LogActivityQuery{
+    pub activity: Option<String>,
+    pub user_id: Option<Uuid>,
+    pub username: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+    pub page: Option<u64>,
+    pub limit: Option<u64>,
+}

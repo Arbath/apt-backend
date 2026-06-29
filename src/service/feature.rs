@@ -4,7 +4,7 @@ use http::request::Parts;
 use uuid::Uuid;
 
 use crate::{
-    domain::repository::{LinkTrait, UserRepoTrait}, models::user::User, repository::{feature::LinkRepository, user::UserRepository}, state::{AppConfig, AppState}, utils::response::AppError
+    domain::repository::{LinkTrait, LogActivityTrait, UserRepoTrait}, models::user::User, repository::{feature::{LinkRepository, LogActivityRepository}, user::UserRepository}, state::{AppConfig, AppState}, utils::response::AppError
 };
 use crate::models::feature::*;
 
@@ -13,6 +13,10 @@ pub struct LinkService<U: UserRepoTrait, L: LinkTrait> {
     user_repo: U,
     link_repo: L,
     config: AppConfig,
+}
+
+pub struct LogActivityService<L: LogActivityTrait> {
+    log_repo: L,
 }
 
 impl <U: UserRepoTrait, L: LinkTrait> LinkService<U, L> {
@@ -101,6 +105,53 @@ impl <U: UserRepoTrait, L: LinkTrait> LinkService<U, L> {
     }
 }
 
+impl <L: LogActivityTrait> LogActivityService<L> {
+    pub fn new(log_repo: L)-> Self {
+        Self { log_repo }
+    }
+
+    pub async fn get_log_detail(&self, log_id: Uuid) -> Result<LogActivity, AppError> {
+        match self.log_repo.delete(log_id).await {
+            Ok(log) => Ok(log),
+            Err(sqlx::Error::RowNotFound) => {
+                Err(AppError::NotFound(format!("Log dengan ID '{}' tidak ditemukan!", log_id)))
+            }
+            Err(other_error) => Err(AppError::DatabaseError(other_error)),
+        }
+    }
+    
+    pub async fn search_logs(&self, query: LogActivityQuery) -> Result<(Vec<LogActivity>, i64), AppError> {
+        let q = self.log_repo.search(query).await?;
+        Ok(q)
+    }
+
+    pub async fn add_log(&self, user_id: Uuid, activity: String) -> Result<LogActivity, AppError> {
+        match self.log_repo.create(user_id, activity).await {
+            Ok(user) => Ok(user),
+            Err(sqlx::Error::RowNotFound) => {
+                Err(AppError::NotFound(format!("User dengan ID '{}' tidak ditemukan!", user_id)))
+            }
+            Err(other_error) => Err(AppError::DatabaseError(other_error)),
+        }
+    }
+    
+    pub async fn remove_log(&self, log_id: Uuid) -> Result<LogActivity, AppError> {
+        match self.log_repo.delete(log_id).await {
+            Ok(log) => Ok(log),
+            Err(sqlx::Error::RowNotFound) => {
+                Err(AppError::NotFound(format!("Log dengan ID '{}' tidak ditemukan!", log_id)))
+            }
+            Err(other_error) => Err(AppError::DatabaseError(other_error)),
+        }
+    }
+    
+    pub async fn remove_log_days(&self, days: i64) -> Result<String, AppError> {
+        let q = self.log_repo.delete_older_than_days(days).await?;
+        let message = format!("{} log terhapus!", q);
+        Ok(message)
+    }
+}
+
 impl<S> FromRequestParts<S> for LinkService<UserRepository, LinkRepository>
 where
     AppState: FromRef<S>,
@@ -118,6 +169,24 @@ where
             user_repo, 
             link_repo, 
             config: (*state.app_config).clone() 
+        })
+    }
+}
+
+impl<S> FromRequestParts<S> for LogActivityService<LogActivityRepository>
+where
+    AppState: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(_parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let state = AppState::from_ref(state);
+        
+        let log_repo = LogActivityRepository::new(state.database.clone());
+        
+        Ok(LogActivityService { 
+            log_repo, 
         })
     }
 }

@@ -1,5 +1,5 @@
 use axum::{Router, body::Body, extract::{DefaultBodyLimit, Path}, routing::{get, post}};
-use crate::{middleware::auth::AuthUser, state::AppState, utils::response::{ApiError, AppError, WebResponse}};
+use crate::{middleware::auth::AuthUser, repository::feature::LogActivityRepository, service::feature::LogActivityService, state::AppState, utils::response::{ApiError, AppError, WebResponse}};
 
 use axum::{extract::{Multipart}, response::IntoResponse};
 use http::{Uri, header};
@@ -8,6 +8,7 @@ use uuid::Uuid;
 use serde_json::json;
 use tokio_util::io::ReaderStream;
 use axum::response::Html;
+type AppLogService = LogActivityService<LogActivityRepository>;
 
 async fn home() -> Html<&'static str> {
     Html(
@@ -36,7 +37,7 @@ pub fn routes() -> Router<AppState> {
         .route("/api/uploads/{file_user_id}/{filename}", get(get_secure_file_handler))
 }
 
-pub async fn upload_file_handler(uri: Uri, AuthUser(user): AuthUser, mut multipart: Multipart) -> Result<impl IntoResponse, ApiError> {
+pub async fn upload_file_handler(uri: Uri, AuthUser(user): AuthUser,log_service: AppLogService, mut multipart: Multipart) -> Result<impl IntoResponse, ApiError> {
     let upload_dir = "./media/uploads";
     let mut file_url = String::new();
 
@@ -90,12 +91,15 @@ pub async fn upload_file_handler(uri: Uri, AuthUser(user): AuthUser, mut multipa
     let res = json!({
         "file_url" : file_url
     });
+    let activity = format!("User mengupload {}", file_url);
+    let _= log_service.add_log(user.id, activity).await;
     Ok(WebResponse::ok(&uri, "File uploaded!".to_string(), res))
 }
 
 pub async fn get_secure_file_handler(
     uri: Uri,
-    AuthUser(_): AuthUser,
+    AuthUser(user): AuthUser,
+    log_service: AppLogService,
     Path((file_user_id, filename)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, ApiError> {
     
@@ -127,5 +131,7 @@ pub async fn get_secure_file_handler(
     let body = Body::from_stream(stream);
     let headers = [(header::CONTENT_TYPE, "application/octet-stream")];
 
+    let activity = format!("User mendownload {}", filename);
+    let _= log_service.add_log(user.id, activity).await;
     Ok((headers, body))
 }

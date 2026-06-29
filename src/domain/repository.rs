@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
-use crate::models::{accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorUpdate, RawCalculationRule, RawIndicator, RawEvaluation}, feature::{Link, LinkCreate, LinkUpdate, LogActivity}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
+use crate::models::{accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorUpdate, RawCalculationRule, RawEvaluation, RawIndicator}, feature::{Link, LinkCreate, LinkUpdate, LogActivity, LogActivityQuery}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -99,8 +99,11 @@ pub trait LinkTrait: Send + Sync {
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
 pub trait LogActivityTrait: Send + Sync {
+    async fn find_by_id(&self, log_id: Uuid) -> Result<LogActivity, sqlx::Error>;
+    async fn search(&self, query: LogActivityQuery) -> Result<(Vec<LogActivity>, i64), sqlx::Error>;
     async fn create(&self, user_id: Uuid, activity: String) -> Result<LogActivity, sqlx::Error>;
     async fn delete(&self, log_id: Uuid) -> Result<LogActivity, sqlx::Error>;
+    async fn delete_older_than_days(&self, days: i64) -> Result<u64, sqlx::Error>;
 }
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
