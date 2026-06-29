@@ -1,8 +1,8 @@
-use axum::{extract::Query, response::IntoResponse};
+use axum::{response::IntoResponse};
 use http::Uri;
 use uuid::Uuid;
 
-use crate::{middleware::auth::{AuthAdmin, AuthAdminOrAuditee, AuthUser}, models::accreditation::{AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRuleCreate, CalculationRuleUpdate, EvaluationCreate, EvaluationQuery, EvaluationUpdate, IndicatorCreate, IndicatorQuery, IndicatorUpdate}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, service::accreditation::AccreditationService, utils::{request::{ValidatedJson, ValidatedPath}, response::{ApiError, PaginationMeta, WebResponse}}};
+use crate::{middleware::auth::{AuthAdmin, AuthAdminOrAuditee, AuthUser}, models::accreditation::{AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRuleCreate, CalculationRuleUpdate, EvaluationCreate, EvaluationQuery, EvaluationUpdate, IndicatorCreate, IndicatorQuery, IndicatorUpdate}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, service::accreditation::AccreditationService, utils::{request::{ValidatedJson, ValidatedPath, ValidatedQuery}, response::{ApiError, PaginationMeta, WebResponse}}};
 
 type AppAccreditation = AccreditationService<AccreditationRepository, IndicatorRepository, CalculationRuleRepository, EvaluationRepository>;
 
@@ -75,7 +75,7 @@ pub async fn get_indicator_detail(
 }
 
 pub async fn search_indicator(
-    Query(query): Query<IndicatorQuery>,
+    ValidatedQuery(query): ValidatedQuery<IndicatorQuery>,
     uri: Uri,
     AuthUser(_): AuthUser,
     service: AppAccreditation,
@@ -141,7 +141,7 @@ pub async fn get_calculation_detail(
 }
 
 pub async fn search_calculation(
-    Query(query): Query<CalculationQuery>,
+    ValidatedQuery(query): ValidatedQuery<CalculationQuery>,
     uri: Uri,
     AuthUser(_): AuthUser,
     service: AppAccreditation,
@@ -207,7 +207,7 @@ pub async fn get_evaluation_detail(
 }
 
 pub async fn search_evaluation(
-    Query(query): Query<EvaluationQuery>,
+    ValidatedQuery(query): ValidatedQuery<EvaluationQuery>,
     uri: Uri,
     AuthUser(_): AuthUser,
     service: AppAccreditation,
@@ -228,11 +228,11 @@ pub async fn search_evaluation(
 
 pub async fn create_evaluation(
     uri: Uri,
-    AuthAdminOrAuditee(_): AuthAdminOrAuditee,
+    AuthAdminOrAuditee(user): AuthAdminOrAuditee,
     service: AppAccreditation,
     ValidatedJson(data): ValidatedJson<EvaluationCreate>,
 ) -> Result<impl IntoResponse, ApiError> {
-    let data = service.add_evaluation(data).await.map_err(|e|e.with_path(&uri))?;
+    let data = service.add_evaluation(user, data).await.map_err(|e|e.with_path(&uri))?;
     
     Ok(WebResponse::created(&uri, "Evaluasi indikator akreditasi berhasil dibuat!".to_string(), data))
 }

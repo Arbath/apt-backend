@@ -50,10 +50,12 @@ impl IndicatorTrait for IndicatorRepository{
             if let Some(criteria) = &query.criteria {
                 qb.push(" AND ai.criteria = ");
                 qb.push_bind(criteria.clone());
+                qb.push("::accreditation_criteria");
             }
             if let Some(target) = &query.target {
                 qb.push(" AND ai.target = ");
                 qb.push_bind(target.clone());
+                qb.push("::quality_target");
             }
         };
 
@@ -123,7 +125,7 @@ impl IndicatorTrait for IndicatorRepository{
     async fn delete(&self, indicator_id: Uuid)-> Result<Indicator, sqlx::Error> {
         sqlx::query_as::<_,Indicator>(
             r#"
-            DELETE FROM accreditation_indicators WHERE id = $1
+            DELETE FROM accreditation_indicators WHERE id = $1 RETURNING *
             "#
         )
         .bind(indicator_id)

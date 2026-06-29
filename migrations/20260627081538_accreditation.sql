@@ -35,7 +35,7 @@ CREATE TYPE evaluation_level AS ENUM (
 
 CREATE TABLE accreditations(
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
-    name TEXT NOT NULL,
+    name TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL,
     year INTEGER NOT NULL,
     reference TEXT,
@@ -44,7 +44,7 @@ CREATE TABLE accreditations(
 
 CREATE TABLE accreditation_indicators (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
-    accreditation_id UUID NOT NULL REFERENCES accreditations(id) ON DELETE RESTRICT,
+    accreditation_id UUID NOT NULL REFERENCES accreditations(id) ON DELETE CASCADE,
     number VARCHAR(50) NOT NULL,
     name TEXT NOT NULL,
     criteria accreditation_criteria NOT NULL,
@@ -65,13 +65,14 @@ CREATE TABLE accreditation_calculation_rules (
     formula TEXT, 
     expectation_result NUMERIC(10,2) DEFAULT 0.00,
     result_format result_format NOT NULL,
+    proof_required BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE accreditation_evaluations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v7(),
-    rule_id UUID NOT NULL REFERENCES accreditation_calculation_rules(id) ON DELETE RESTRICT,
+    rule_id UUID NOT NULL REFERENCES accreditation_calculation_rules(id) ON DELETE CASCADE,
     level evaluation_level NOT NULL,
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     institute_id INTEGER REFERENCES institutes(id) ON DELETE CASCADE,
@@ -79,7 +80,6 @@ CREATE TABLE accreditation_evaluations (
     input_variables JSONB NOT NULL DEFAULT '[]'::jsonb, 
     calculated_result NUMERIC(10,2) DEFAULT 0.00, 
     proof TEXT,
-    proof_required BOOLEAN NOT NULL DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
 

@@ -138,7 +138,7 @@ pub trait CalculationRuleTrait: Send + Sync {
 pub trait EvaluationTrait: Send + Sync {
     async fn find_by_id(&self, evaluation_id: Uuid) -> Result<Evaluation, sqlx::Error>;
     async fn search(&self, query: EvaluationQuery) -> Result<(Vec<RawEvaluation>, i64), sqlx::Error>;
-    async fn create(&self, calculated_result: Decimal, data: EvaluationCreate) -> Result<Evaluation, sqlx::Error>;
+    async fn create(&self, user_id: Uuid, calculated_result: Decimal, data: EvaluationCreate) -> Result<Evaluation, sqlx::Error>;
     async fn update(&self, evaluation_id: Uuid, calculated_result: Decimal, data: EvaluationUpdate) -> Result<Evaluation, sqlx::Error>;
     async fn delete(&self, evaluation_id: Uuid) -> Result<Evaluation, sqlx::Error>;
 }

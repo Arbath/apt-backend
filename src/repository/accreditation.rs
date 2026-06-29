@@ -75,7 +75,7 @@ impl AccreditationTrait for AccreditationRepository {
     async fn delete(&self, accreditation_id: Uuid)-> Result<Accreditation, sqlx::Error> {
         sqlx::query_as::<_,Accreditation>(
             r#"
-            DELETE FROM accreditations WHERE id = $1
+            DELETE FROM accreditations WHERE id = $1 RETURNING *
             "#
         )
         .bind(accreditation_id)

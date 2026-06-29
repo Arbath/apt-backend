@@ -34,11 +34,11 @@ impl EvaluationTrait for EvaluationRepository{
         let offset = (page - 1) * limit;
         let base_query = r#"
             FROM accreditation_evaluations ae 
-            INNER JOIN accreditations a ON ae.accreditation_id = a.id
-            INNER JOIN accreditation_indicators i ON ae.indicator_id = i.id
-            INNER JOIN accreditation_calculation_rules acr ON ae.rule_id = acr.id
             INNER JOIN users u ON ae.user_id = u.id
-            LEFT JOIN institutes ins ON ae.institute_id = ins.id
+            INNER JOIN accreditation_calculation_rules acr ON ae.rule_id = acr.id
+            INNER JOIN accreditation_indicators i ON acr.indicator_id = i.id
+            INNER JOIN accreditations a ON i.accreditation_id = a.id
+            LEFT JOIN institutes inst ON ae.institute_id = inst.id
             LEFT JOIN study_programs sp ON ae.study_program_id = sp.id
             WHERE 1=1
         "#;
@@ -49,7 +49,7 @@ impl EvaluationTrait for EvaluationRepository{
         let mut data_qb: QueryBuilder<Postgres> = QueryBuilder::new(r#"
             SELECT 
                 ae.*, 
-                acr.format AS format,
+                acr.formula AS formula,
                 acr.expectation_result AS expectation_result,
                 acr.result_format AS result_format,
                 u.name AS user_name,
@@ -62,11 +62,11 @@ impl EvaluationTrait for EvaluationRepository{
         data_qb.push(base_query);
         let apply_filters = |qb: &mut QueryBuilder<'_, Postgres>| {
             if let Some(accreditation_id) = &query.accreditation_id {
-                qb.push(" AND ae.accreditation_id = ");
+                qb.push(" AND i.accreditation_id = ");
                 qb.push_bind(accreditation_id.clone());
             }
             if let Some(indicator_id) = &query.indicator_id {
-                qb.push(" AND ae.indicator_id = ");
+                qb.push(" AND acr.indicator_id = ");
                 qb.push_bind(indicator_id.clone());
             }
             if let Some(rule_id) = &query.rule_id {
@@ -107,20 +107,20 @@ impl EvaluationTrait for EvaluationRepository{
         Ok((data, total_items))
     }
     
-    async fn create(&self, calculated_result: Decimal, data: EvaluationCreate)-> Result<Evaluation, sqlx::Error> {
+    async fn create(&self, user_id: Uuid, calculated_result: Decimal, data: EvaluationCreate)-> Result<Evaluation, sqlx::Error> {
         sqlx::query_as::<_,Evaluation>(
             r#"
-            INSERT INTO accreditation_evaluations(rule_id, level, institute_id, study_program_id, input_variables, proof, proof_required, calculated_result) 
+            INSERT INTO accreditation_evaluations(rule_id, user_id, level, institute_id, study_program_id, input_variables, proof, calculated_result) 
             VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
             "#
         )
         .bind(data.rule_id)
+        .bind(user_id)
         .bind(data.level)
         .bind(data.institute_id)
         .bind(data.study_program_id)
         .bind(Json(data.input_variables))
         .bind(data.proof)
-        .bind(data.proof_required)
         .bind(calculated_result)
         .fetch_one(&self.pool)
         .await
@@ -137,9 +137,8 @@ impl EvaluationTrait for EvaluationRepository{
                 study_program_id = COALESCE($4, study_program_id),
                 input_variables = COALESCE($5, input_variables),
                 proof = COALESCE($6, proof),
-                proof_required = COALESCE($7, proof_required),
-                calculated_result = COALESCE($8, calculated_result)
-            WHERE id = $9
+                calculated_result = COALESCE($7, calculated_result)
+            WHERE id = $8
             RETURNING *
             "#
         )
@@ -149,7 +148,6 @@ impl EvaluationTrait for EvaluationRepository{
         .bind(data.study_program_id)
         .bind(data.input_variables.map(Json))
         .bind(data.proof)
-        .bind(data.proof_required)
         .bind(calculated_result)
         .bind(evaluation_id)
         .fetch_one(&self.pool)
@@ -159,7 +157,7 @@ impl EvaluationTrait for EvaluationRepository{
     async fn delete(&self, evaluation_id: Uuid)-> Result<Evaluation, sqlx::Error> {
         sqlx::query_as::<_,Evaluation>(
             r#"
-            DELETE FROM accreditation_evaluations WHERE id = $1
+            DELETE FROM accreditation_evaluations WHERE id = $1 RETURNING *
             "#
         )
         .bind(evaluation_id)

@@ -8,8 +8,8 @@ use uuid::Uuid;
 use crate::models::{institute::{InstituteNested, StudyProgramNested}, user::UserNested};
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
-#[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "accreditation_criteria", rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "accreditation_criteria", rename_all = "snake_case")]
 pub enum AccreditationCriteria{
     QualityCulture,
     EducationRelevance,
@@ -45,10 +45,10 @@ pub enum ResultFormat{
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
-#[serde(rename_all = "lowercase")]
-#[sqlx(type_name = "Evaluation_level", rename_all = "lowercase")]
+#[serde(rename_all = "snake_case")]
+#[sqlx(type_name = "evaluation_level", rename_all = "snake_case")]
 pub enum EvaluationLevel{
-    Univeristy,
+    University,
     Institute,
     StudyProgram
 }
@@ -196,8 +196,8 @@ pub struct IndicatorUpdate{
 #[derive(Serialize, Deserialize)]
 pub struct IndicatorQuery{
     pub accreditation_id: Option<Uuid>,
-    pub criteria: Option<String>,
-    pub target: Option<String>,
+    pub criteria: Option<AccreditationCriteria>,
+    pub target: Option<QualityTarget>,
     pub sort: Option<SortType>,
     pub page: Option<u64>,
     pub limit: Option<u64>,
@@ -208,13 +208,14 @@ pub struct CalculationRule{
     pub id: Uuid,
     pub indicator_id: Uuid,
     pub assessment: String,
-    pub fullfillment: String,
+    pub fulfillment: String,
     pub data_source: String,
     pub r#type: CalculationType,
     pub input_rules: Value,
     pub formula: String,
     pub expectation_result: Decimal,
     pub result_format: ResultFormat,
+    pub proof_required: bool,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
 }
@@ -233,13 +234,14 @@ pub struct RawCalculationRule{
     pub indicator_id: Uuid,
     pub indicator_name: String,
     pub assessment: String,
-    pub fullfillment: String,
+    pub fulfillment: String,
     pub data_source: String,
     pub r#type: CalculationType,
     pub input_rules: Value,
     pub formula: String,
     pub expectation_result: Decimal,
     pub result_format: ResultFormat,
+    pub proof_required: bool,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
 }
@@ -249,13 +251,14 @@ pub struct CalculationResponse{
     pub id: Uuid,
     pub indicator: IndicatorNested,
     pub assessment: String,
-    pub fullfillment: String,
+    pub fulfillment: String,
     pub data_source: String,
     pub r#type: CalculationType,
     pub input_rules: Value,
     pub formula: String,
     pub expectation_result: Decimal,
     pub result_format: ResultFormat,
+    pub proof_required: bool,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
 }
@@ -269,13 +272,14 @@ impl From<RawCalculationRule> for CalculationResponse {
             },
             id: row.id,
             assessment: row.assessment,
-            fullfillment: row.fullfillment,
+            fulfillment: row.fulfillment,
             data_source: row.data_source,
             r#type: row.r#type,
             input_rules: row.input_rules,
             formula: row.formula,
             expectation_result: row.expectation_result,
             result_format: row.result_format,
+            proof_required: row.proof_required,
             updated_at: row.updated_at,
             created_at: row.created_at,
         }
@@ -286,12 +290,13 @@ impl From<RawCalculationRule> for CalculationResponse {
 pub struct CalculationRuleCreate{
     pub indicator_id: Uuid,
     pub assessment: String,
-    pub fullfillment: String,
+    pub fulfillment: String,
     pub data_source: String,
     pub r#type: CalculationType,
     pub input_rules: Vec<InputRule>,
     pub formula: String,
     pub expectation_result: Decimal,
+    pub proof_required: bool,
     pub result_format: ResultFormat,
 }
 
@@ -299,13 +304,14 @@ pub struct CalculationRuleCreate{
 pub struct CalculationRuleUpdate{
     pub indicator_id: Option<Uuid>,
     pub assessment: Option<String>,
-    pub fullfillment: Option<String>,
+    pub fulfillment: Option<String>,
     pub data_source: Option<String>,
     pub r#type: Option<CalculationType>,
     pub input_rules: Option<Vec<InputRule>>,
     pub formula: Option<String>,
     pub expectation_result: Option<Decimal>,
     pub result_format: Option<ResultFormat>,
+    pub proof_required: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -326,8 +332,7 @@ pub struct Evaluation{
     pub study_program_id: Option<i32>,
     pub input_variables: Value,
     pub calculated_result: Decimal,
-    pub proof: String,
-    pub proof_required: bool,
+    pub proof: Option<String>,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>
 }
@@ -349,8 +354,7 @@ pub struct RawEvaluation{
     pub study_program_name: Option<String>,
     pub input_variables: Value,
     pub calculated_result: Decimal,
-    pub proof: String,
-    pub proof_required: bool,
+    pub proof: Option<String>,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>
 }
@@ -365,8 +369,7 @@ pub struct EvaluationResponse{
     pub calculation_rule: CalculationNested,
     pub input_variables: Value,
     pub calculated_result: Decimal,
-    pub proof: String,
-    pub proof_required: bool,
+    pub proof: Option<String>,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>
 }
@@ -397,7 +400,6 @@ impl From<RawEvaluation> for EvaluationResponse {
             input_variables: row.input_variables,
             calculated_result: row.calculated_result,
             proof: row.proof,
-            proof_required: row.proof_required,
             updated_at: row.updated_at,
             created_at: row.created_at,
         }
@@ -412,8 +414,7 @@ pub struct EvaluationCreate{
     pub institute_id: Option<i32>,
     pub study_program_id: Option<i32>,
     pub input_variables: Vec<InputRule>,
-    pub proof: String,
-    pub proof_required: bool,
+    pub proof: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -424,7 +425,6 @@ pub struct EvaluationUpdate{
     pub study_program_id: Option<i32>,
     pub input_variables: Option<Vec<InputRule>>,
     pub proof: Option<String>,
-    pub proof_required: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]

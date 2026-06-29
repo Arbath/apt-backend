@@ -2,7 +2,7 @@ use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use uuid::Uuid;
 
-use crate::{domain::repository::{AccreditationTrait, CalculationRuleTrait, EvaluationTrait, IndicatorTrait}, models::accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationResponse, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationResponse, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorResponse, IndicatorUpdate, InputRule}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, state::AppState, utils::{math::calculate_formula, response::AppError}};
+use crate::{domain::repository::{AccreditationTrait, CalculationRuleTrait, EvaluationTrait, IndicatorTrait}, models::{accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationResponse, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationResponse, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorResponse, IndicatorUpdate, InputRule}, user::User}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, state::AppState, utils::{math::calculate_formula, response::AppError}};
 
 pub struct AccreditationService<A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: EvaluationTrait> {
     accreditation_repo: A,
@@ -136,12 +136,17 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
         Ok((response, items))
     }
 
-    pub async fn add_evaluation(&self, data: EvaluationCreate) -> Result<Evaluation, AppError> {
+    pub async fn add_evaluation(&self, user: User, data: EvaluationCreate) -> Result<Evaluation, AppError> {
         let calculation_rule = self.calculation_repo.find_by_id(data.rule_id.clone()).await?;
         let formula = calculation_rule.formula;
         let calculated_result = calculate_formula(&formula, &data.input_variables).await?;
+        if calculation_rule.proof_required {
+            if data.proof.is_none(){
+                return Err(AppError::BadRequest("Bukti wajib diisi!".to_string()))
+            }
+        } 
 
-        let q = self.evaluation_repo.create(calculated_result, data)
+        let q = self.evaluation_repo.create(user.id, calculated_result, data)
             .await.map_err(|e| match e {
                 sqlx::Error::RowNotFound => AppError::NotFound("Evaluasi indikator tidak ditemukan!".to_string()),
                 _ => AppError::BadRequest(e.to_string())
