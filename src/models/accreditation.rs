@@ -15,7 +15,8 @@ pub enum AccreditationCriteria{
     EducationRelevance,
     ResearchRelevance,
     ComunityServiceRelevance,
-    Accountability
+    Accountability,
+    MissionDifferentiation,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::Type, PartialEq)]
@@ -147,6 +148,13 @@ pub struct AccreditationStatistics {
     pub accountability_output: Decimal,
     pub accountability_impact: Decimal,
     pub accountability_total: Decimal,
+    
+    // Mission Differentation
+    pub mission_differentiation_input: Decimal,
+    pub mission_differentiation_process: Decimal,
+    pub mission_differentiation_output: Decimal,
+    pub mission_differentiation_impact: Decimal,
+    pub mission_differentiation_total: Decimal,
 
     // Total Akreditasi
     pub accreditation_total: Decimal,
