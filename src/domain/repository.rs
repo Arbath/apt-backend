@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use uuid::Uuid;
-use crate::models::{accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorUpdate, RawCalculationRule, RawEvaluation, RawIndicator}, feature::{Link, LinkCreate, LinkUpdate, LogActivity, LogActivityQuery}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
+use crate::models::{accreditation::{Accreditation, AccreditationCreate, AccreditationStatistics, AccreditationUpdate, CalculationQuery, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorStatistics, IndicatorUpdate, RawCalculationRule, RawEvaluation, RawIndicator}, feature::{Link, LinkCreate, LinkUpdate, LogActivity, LogActivityQuery}, institute::{Institute, InstituteCreate, InstituteUpdate, StudyProgram, StudyProgramCreate, StudyProgramUpdate}, lecturer::{ApprovalStatus, Lecturer, LecturerCreate, LecturerQuery, LecturerUpdate}, recognition::{ManyRecognitionLecturer, RecognitionCategory, RecognitionCategoryCreate, RecognitionCategoryUpdate, RecognitionLecturer, RecognitionLecturerCreate, RecognitionLecturerQuery, RecognitionLecturerUpdate}, user::{User, UserReq, UserUpdate}};
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
 #[async_trait]
@@ -114,6 +114,8 @@ pub trait AccreditationTrait: Send + Sync {
     async fn create(&self, data: AccreditationCreate) -> Result<Accreditation, sqlx::Error>;
     async fn update(&self, accreditation_id: Uuid, data: AccreditationUpdate) -> Result<Accreditation, sqlx::Error>;
     async fn delete(&self, accreditation_id: Uuid) -> Result<Accreditation, sqlx::Error>;
+    async fn one_stats(&self, accreditation_id: Uuid) -> Result<AccreditationStatistics, sqlx::Error>;
+    async fn all_stats(&self) -> Result<Vec<AccreditationStatistics>, sqlx::Error>;
 }
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
@@ -124,6 +126,8 @@ pub trait IndicatorTrait: Send + Sync {
     async fn create(&self, data: IndicatorCreate) -> Result<Indicator, sqlx::Error>;
     async fn update(&self, indicator_id: Uuid, data: IndicatorUpdate) -> Result<Indicator, sqlx::Error>;
     async fn delete(&self, indicator_id: Uuid) -> Result<Indicator, sqlx::Error>;
+    async fn one_stats(&self, indicator_id: Uuid) -> Result<IndicatorStatistics, sqlx::Error>;
+    async fn all_stats(&self, accreditation_id: Uuid) -> Result<Vec<IndicatorStatistics>, sqlx::Error>;
 }
 
 #[cfg_attr(any(test, feature = "test-utils"), mockall::automock)]
@@ -141,7 +145,7 @@ pub trait CalculationRuleTrait: Send + Sync {
 pub trait EvaluationTrait: Send + Sync {
     async fn find_by_id(&self, evaluation_id: Uuid) -> Result<Evaluation, sqlx::Error>;
     async fn search(&self, query: EvaluationQuery) -> Result<(Vec<RawEvaluation>, i64), sqlx::Error>;
-    async fn create(&self, user_id: Uuid, calculated_result: Decimal, data: EvaluationCreate) -> Result<Evaluation, sqlx::Error>;
-    async fn update(&self, evaluation_id: Uuid, calculated_result: Decimal, data: EvaluationUpdate) -> Result<Evaluation, sqlx::Error>;
+    async fn create(&self, user_id: Uuid, calculated_result: Decimal, score: Decimal, data: EvaluationCreate) -> Result<Evaluation, sqlx::Error>;
+    async fn update(&self, evaluation_id: Uuid, calculated_result: Decimal, score: Decimal, data: EvaluationUpdate) -> Result<Evaluation, sqlx::Error>;
     async fn delete(&self, evaluation_id: Uuid) -> Result<Evaluation, sqlx::Error>;
 }

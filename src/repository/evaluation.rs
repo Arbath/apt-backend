@@ -107,11 +107,11 @@ impl EvaluationTrait for EvaluationRepository{
         Ok((data, total_items))
     }
     
-    async fn create(&self, user_id: Uuid, calculated_result: Decimal, data: EvaluationCreate)-> Result<Evaluation, sqlx::Error> {
+    async fn create(&self, user_id: Uuid, calculated_result: Decimal, score: Decimal, data: EvaluationCreate)-> Result<Evaluation, sqlx::Error> {
         sqlx::query_as::<_,Evaluation>(
             r#"
-            INSERT INTO accreditation_evaluations(rule_id, user_id, level, institute_id, study_program_id, input_variables, proof, calculated_result) 
-            VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *
+            INSERT INTO accreditation_evaluations(rule_id, user_id, level, institute_id, study_program_id, input_variables, proof, calculated_result, score) 
+            VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *
             "#
         )
         .bind(data.rule_id)
@@ -122,11 +122,12 @@ impl EvaluationTrait for EvaluationRepository{
         .bind(Json(data.input_variables))
         .bind(data.proof)
         .bind(calculated_result)
+        .bind(score)
         .fetch_one(&self.pool)
         .await
     }
     
-    async fn update(&self, evaluation_id: Uuid, calculated_result: Decimal, data: EvaluationUpdate) -> Result<Evaluation, sqlx::Error> {
+    async fn update(&self, evaluation_id: Uuid, calculated_result: Decimal, score: Decimal, data: EvaluationUpdate) -> Result<Evaluation, sqlx::Error> {
         sqlx::query_as::<_, Evaluation>(
             r#"
             UPDATE accreditation_evaluations 
@@ -137,8 +138,9 @@ impl EvaluationTrait for EvaluationRepository{
                 study_program_id = COALESCE($4, study_program_id),
                 input_variables = COALESCE($5, input_variables),
                 proof = COALESCE($6, proof),
-                calculated_result = COALESCE($7, calculated_result)
-            WHERE id = $8
+                calculated_result = COALESCE($7, calculated_result),
+                score = COALESCE($8, score)
+            WHERE id = $9
             RETURNING *
             "#
         )
@@ -149,6 +151,7 @@ impl EvaluationTrait for EvaluationRepository{
         .bind(data.input_variables.map(Json))
         .bind(data.proof)
         .bind(calculated_result)
+        .bind(score)
         .bind(evaluation_id)
         .fetch_one(&self.pool)
         .await

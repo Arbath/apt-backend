@@ -108,6 +108,50 @@ pub struct AccreditationUpdate{
     pub reference: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct AccreditationStatistics {
+    pub accreditation_id: Uuid,
+    pub accreditation_name: String,
+
+    // Quality Culture
+    pub quality_culture_input: Decimal,
+    pub quality_culture_process: Decimal,
+    pub quality_culture_output: Decimal,
+    pub quality_culture_impact: Decimal,
+    pub quality_culture_total: Decimal,
+
+    // Education Relevance
+    pub education_relevance_input: Decimal,
+    pub education_relevance_process: Decimal,
+    pub education_relevance_output: Decimal,
+    pub education_relevance_impact: Decimal,
+    pub education_relevance_total: Decimal,
+
+    // Research Relevance
+    pub research_relevance_input: Decimal,
+    pub research_relevance_process: Decimal,
+    pub research_relevance_output: Decimal,
+    pub research_relevance_impact: Decimal,
+    pub research_relevance_total: Decimal,
+
+    // Community Service Relevance
+    pub community_service_relevance_input: Decimal,
+    pub community_service_relevance_process: Decimal,
+    pub community_service_relevance_output: Decimal,
+    pub community_service_relevance_impact: Decimal,
+    pub community_service_relevance_total: Decimal,
+
+    // Accountability
+    pub accountability_input: Decimal,
+    pub accountability_process: Decimal,
+    pub accountability_output: Decimal,
+    pub accountability_impact: Decimal,
+    pub accountability_total: Decimal,
+
+    // Total Akreditasi
+    pub accreditation_total: Decimal,
+}
+
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Indicator{
     pub id: Uuid,
@@ -201,6 +245,19 @@ pub struct IndicatorQuery{
     pub sort: Option<SortType>,
     pub page: Option<u64>,
     pub limit: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+pub struct IndicatorStatistics {
+    pub accreditation_id: Uuid,
+    pub indicator_id: Uuid,
+    pub number: String,
+    pub name: String,
+    pub criteria: AccreditationCriteria,
+    pub target: QualityTarget,
+    pub assessment: String,
+    pub fulfillment: String,
+    pub score: Decimal,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
@@ -332,6 +389,7 @@ pub struct Evaluation{
     pub study_program_id: Option<i32>,
     pub input_variables: Value,
     pub calculated_result: Decimal,
+    pub score: Decimal,
     pub proof: Option<String>,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>
@@ -354,6 +412,7 @@ pub struct RawEvaluation{
     pub study_program_name: Option<String>,
     pub input_variables: Value,
     pub calculated_result: Decimal,
+    pub score: Decimal,
     pub proof: Option<String>,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>
@@ -369,6 +428,7 @@ pub struct EvaluationResponse{
     pub calculation_rule: CalculationNested,
     pub input_variables: Value,
     pub calculated_result: Decimal,
+    pub score: Decimal,
     pub proof: Option<String>,
     pub updated_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>
@@ -399,6 +459,7 @@ impl From<RawEvaluation> for EvaluationResponse {
             level: row.level,
             input_variables: row.input_variables,
             calculated_result: row.calculated_result,
+            score: row.score,
             proof: row.proof,
             updated_at: row.updated_at,
             created_at: row.created_at,

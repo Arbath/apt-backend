@@ -2,7 +2,7 @@ use axum::{response::IntoResponse};
 use http::Uri;
 use uuid::Uuid;
 
-use crate::{middleware::auth::{AuthAdmin, AuthAdminOrAuditee, AuthUser}, models::accreditation::{AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRuleCreate, CalculationRuleUpdate, EvaluationCreate, EvaluationQuery, EvaluationUpdate, IndicatorCreate, IndicatorQuery, IndicatorUpdate}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, feature::LogActivityRepository, indicator::IndicatorRepository}, service::{accreditation::AccreditationService, feature::LogActivityService}, utils::{request::{ValidatedJson, ValidatedPath, ValidatedQuery}, response::{ApiError, PaginationMeta, WebResponse}}};
+use crate::{middleware::auth::{AuthAdmin, AuthAdminOrAuditor, AuthUser}, models::accreditation::{AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationRuleCreate, CalculationRuleUpdate, EvaluationCreate, EvaluationQuery, EvaluationUpdate, IndicatorCreate, IndicatorQuery, IndicatorUpdate}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, feature::LogActivityRepository, indicator::IndicatorRepository}, service::{accreditation::AccreditationService, feature::LogActivityService}, utils::{request::{ValidatedJson, ValidatedPath, ValidatedQuery}, response::{ApiError, PaginationMeta, WebResponse}}};
 
 type AppAccreditation = AccreditationService<AccreditationRepository, IndicatorRepository, CalculationRuleRepository, EvaluationRepository>;
 type AppLogService = LogActivityService<LogActivityRepository>;
@@ -70,6 +70,27 @@ pub async fn delete_accreditation(
     let _= log_service.add_log(user.id, activity).await;
 
     Ok(WebResponse::ok(&uri, "Akreditasi berhasil dihapus!".to_string(), data))
+}
+
+pub async fn get_one_accreditation_stats(
+    ValidatedPath(accreditation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_one_accr_stats(accreditation_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail statistik akreditasi".to_string(), data))
+}
+
+pub async fn get_all_accreditation_stats(
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_all_accr_stats().await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail semua statistik akreditasi".to_string(), data))
 }
 
 // INDICATOR
@@ -145,6 +166,28 @@ pub async fn delete_indicator(
     let _= log_service.add_log(user.id, activity).await;
     
     Ok(WebResponse::ok(&uri, "Indikator akreditasi berhasil dihapus!".to_string(), data))
+}
+
+pub async fn get_one_indicator_stats(
+    ValidatedPath(indicator_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_one_indicator_stats(indicator_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail akreditasi".to_string(), data))
+}
+
+pub async fn get_all_indicator_stats(
+    ValidatedPath(accreditation_id): ValidatedPath<Uuid>,
+    uri: Uri,
+    AuthUser(_): AuthUser,
+    service: AppAccreditation,
+) -> Result<impl IntoResponse, ApiError> {
+    let data = service.get_all_indicator_stats(accreditation_id).await.map_err(|e|e.with_path(&uri))?;
+    
+    Ok(WebResponse::ok(&uri, "Detail akreditasi".to_string(), data))
 }
 
 // CALCULATION
@@ -256,7 +299,7 @@ pub async fn search_evaluation(
 
 pub async fn create_evaluation(
     uri: Uri,
-    AuthAdminOrAuditee(user): AuthAdminOrAuditee,
+    AuthAdminOrAuditor(user): AuthAdminOrAuditor,
     service: AppAccreditation,
     log_service: AppLogService,
     ValidatedJson(data): ValidatedJson<EvaluationCreate>,
@@ -271,7 +314,7 @@ pub async fn create_evaluation(
 pub async fn update_evaluation(
     ValidatedPath(evaluation_id): ValidatedPath<Uuid>,
     uri: Uri,
-    AuthAdmin(user): AuthAdmin,
+    AuthAdminOrAuditor(user): AuthAdminOrAuditor,
     service: AppAccreditation,
     log_service: AppLogService,
     ValidatedJson(data): ValidatedJson<EvaluationUpdate>,

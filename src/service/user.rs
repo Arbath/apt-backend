@@ -31,8 +31,9 @@ impl<U: UserRepoTrait> UserService<U>{
         if user.role != RoleUsers::ADMIN {
             return Err(AppError::Forbidden(format!("Hanya admin yang dapat menambahkan user!")));
         }
-        let password_hash = generate_async(data.username.clone()).await?;
-        let q = match self.user_repo.create(data.normalize(), password_hash).await {
+        let final_data = data.normalize();
+        let password_hash = generate_async(final_data.username.clone()).await?;
+        let q = match self.user_repo.create(final_data, password_hash).await {
             Ok(user) => user,
             Err(e) => {
                 match e {

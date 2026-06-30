@@ -2,7 +2,7 @@ use axum::extract::{FromRef, FromRequestParts};
 use http::request::Parts;
 use uuid::Uuid;
 
-use crate::{domain::repository::{AccreditationTrait, CalculationRuleTrait, EvaluationTrait, IndicatorTrait}, models::{accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate, CalculationQuery, CalculationResponse, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationResponse, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorResponse, IndicatorUpdate, InputRule}, user::User}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, state::AppState, utils::{math::calculate_formula, response::AppError}};
+use crate::{domain::repository::{AccreditationTrait, CalculationRuleTrait, EvaluationTrait, IndicatorTrait}, models::{accreditation::{Accreditation, AccreditationCreate, AccreditationStatistics, AccreditationUpdate, CalculationQuery, CalculationResponse, CalculationRule, CalculationRuleCreate, CalculationRuleUpdate, Evaluation, EvaluationCreate, EvaluationQuery, EvaluationResponse, EvaluationUpdate, Indicator, IndicatorCreate, IndicatorQuery, IndicatorResponse, IndicatorStatistics, IndicatorUpdate, InputRule}, user::User}, repository::{accreditation::AccreditationRepository, calculation::CalculationRuleRepository, evaluation::EvaluationRepository, indicator::IndicatorRepository}, state::AppState, utils::{math::{calculate_formula, calculate_proportional_score}, response::AppError}};
 
 pub struct AccreditationService<A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: EvaluationTrait> {
     accreditation_repo: A,
@@ -30,7 +30,7 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
 
     pub async fn add_accr(&self, data: AccreditationCreate)-> Result<Accreditation, AppError> {
         let q = self.accreditation_repo.create(data)
-            .await.map_err(|_| AppError::NotFound(format!("Akreditasi tidak ditemukan!")))?;
+            .await.map_err(|e| AppError::BadRequest(format!("Gagal menambahkan akreditasi: {}", e)))?;
         Ok(q)
     }
     
@@ -42,6 +42,18 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
 
     pub async fn remove_accr(&self, accreditation_id: Uuid)-> Result<Accreditation, AppError> {
         let q = self.accreditation_repo.delete(accreditation_id)
+            .await.map_err(|_| AppError::NotFound(format!("Akreditasi tidak ditemukan!")))?;
+        Ok(q)
+    }
+
+    pub async fn get_one_accr_stats(&self, accreditation_id: Uuid)-> Result<AccreditationStatistics, AppError> {
+        let q = self.accreditation_repo.one_stats(accreditation_id)
+            .await.map_err(|_| AppError::NotFound(format!("Akreditasi tidak ditemukan!")))?;
+        Ok(q)
+    }
+
+    pub async fn get_all_accr_stats(&self)-> Result<Vec<AccreditationStatistics>, AppError> {
+        let q = self.accreditation_repo.all_stats()
             .await.map_err(|_| AppError::NotFound(format!("Akreditasi tidak ditemukan!")))?;
         Ok(q)
     }
@@ -76,6 +88,18 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
 
     pub async fn remove_indicator(&self, indicator_id: Uuid)-> Result<Indicator, AppError>{
         let q = self.indicator_repo.delete(indicator_id)
+            .await.map_err(|_| AppError::NotFound(format!("Indikator akreditasi tidak ditemukan!")))?;
+        Ok(q)
+    }
+
+    pub async fn get_one_indicator_stats(&self, indicator_id: Uuid)-> Result<IndicatorStatistics, AppError> {
+        let q = self.indicator_repo.one_stats(indicator_id)
+            .await.map_err(|_| AppError::NotFound(format!("Indikator akreditasi tidak ditemukan!")))?;
+        Ok(q)
+    }
+
+    pub async fn get_all_indicator_stats(&self, accreditation_id: Uuid)-> Result<Vec<IndicatorStatistics>, AppError> {
+        let q = self.indicator_repo.all_stats(accreditation_id)
             .await.map_err(|_| AppError::NotFound(format!("Indikator akreditasi tidak ditemukan!")))?;
         Ok(q)
     }
@@ -146,7 +170,9 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
             }
         } 
 
-        let q = self.evaluation_repo.create(user.id, calculated_result, data)
+        let score = calculate_proportional_score(calculated_result, calculation_rule.expectation_result).await?;
+
+        let q = self.evaluation_repo.create(user.id, calculated_result, score, data)
             .await.map_err(|e| match e {
                 sqlx::Error::RowNotFound => AppError::NotFound("Evaluasi indikator tidak ditemukan!".to_string()),
                 _ => AppError::BadRequest(e.to_string())
@@ -159,6 +185,7 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
         let existing_eval = self.evaluation_repo.find_by_id(evaluation_id).await
             .map_err(|_| AppError::NotFound("Data evaluasi sebelumnya tidak ditemukan".to_string()))?;
         let mut final_calculated_result = existing_eval.calculated_result;
+        let mut final_score = existing_eval.score;
         if data.input_variables.is_some() || data.rule_id.is_some() {
             let final_rule_id = data.rule_id.clone().unwrap_or(existing_eval.rule_id);
             
@@ -172,8 +199,11 @@ impl <A: AccreditationTrait, I: IndicatorTrait, C: CalculationRuleTrait, E: Eval
 
             let calculation_rule = self.calculation_repo.find_by_id(final_rule_id).await?;
             final_calculated_result = calculate_formula(&calculation_rule.formula, &final_input_vars).await?;
+            final_score = calculate_proportional_score(final_calculated_result, calculation_rule.expectation_result).await?;
         }
-        let q = self.evaluation_repo.update(evaluation_id, final_calculated_result, data)
+
+
+        let q = self.evaluation_repo.update(evaluation_id, final_calculated_result, final_score, data)
             .await.map_err(|e| match e {
                 sqlx::Error::RowNotFound => AppError::NotFound("Evaluasi indikator tidak ditemukan!".to_string()),
                 _ => AppError::BadRequest(e.to_string())

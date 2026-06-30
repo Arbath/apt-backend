@@ -32,3 +32,28 @@ pub async fn calculate_formula(formula: &str, variables: &[InputRule]) -> Result
         AppError::BadRequest("Gagal mengonversi hasil akhir kalkulasi ke tipe Decimal".to_string())
     })
 }
+
+/// Fungsi helper untuk menghitung skor proporsional (0.00 - 3.00)
+pub async fn calculate_proportional_score(
+    actual_result: Decimal, 
+    expectation_result: Decimal
+) -> Result<Decimal, AppError> {
+    
+    // Ekstrak nilai Decimal ke f64 [cite: 90, 91]
+    let actual = actual_result.to_f64().unwrap_or(0.0);
+    let expected = expectation_result.to_f64().unwrap_or(0.0);
+
+    // Kalkulasi Skor Proporsional
+    let raw_score = if expected == 0.0 {
+        if actual >= 0.0 { 3.00 } else { 0.00 }
+    } else {
+        (actual / expected) * 3.00
+    };
+
+    // Mengunci nilai (clamping) di range 0.00 - 3.00 [cite: 86] 
+    // dan membulatkan ke 2 desimal agar sesuai tipe NUMERIC(3,2) [cite: 88, 91]
+    let clamped_score = (raw_score.clamp(0.00, 3.00) * 100.0).round() / 100.0;
+    let final_score = Decimal::from_f64(clamped_score).unwrap_or_default();
+
+    Ok(final_score)
+}

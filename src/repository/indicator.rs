@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::{domain::repository::IndicatorTrait, models::accreditation::{IndicatorQuery, Indicator, IndicatorCreate, IndicatorUpdate, RawIndicator, SortType}};
+use crate::{domain::repository::IndicatorTrait, models::accreditation::{Indicator, IndicatorCreate, IndicatorQuery, IndicatorStatistics, IndicatorUpdate, RawIndicator, SortType}};
 
 pub struct IndicatorRepository{
     pool: PgPool,
@@ -130,6 +130,28 @@ impl IndicatorTrait for IndicatorRepository{
         )
         .bind(indicator_id)
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn one_stats(&self, indicator_id: Uuid)-> Result<IndicatorStatistics, sqlx::Error> {
+        sqlx::query_as::<_,IndicatorStatistics>(
+            r#"
+            SELECT * FROM indicator_scores WHERE indicator_id = $1
+            "#
+        )
+        .bind(indicator_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn all_stats(&self, accreditation_id: Uuid)-> Result<Vec<IndicatorStatistics>, sqlx::Error> {
+        sqlx::query_as::<_,IndicatorStatistics>(
+            r#"
+            SELECT * FROM indicator_scores WHERE accreditation_id = $1
+            "#
+        )
+        .bind(accreditation_id)
+        .fetch_all(&self.pool)
         .await
     }
 }

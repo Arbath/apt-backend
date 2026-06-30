@@ -9,13 +9,17 @@ pub fn routes() -> Router<AppState> {
         .route("/accreditation",post(create_accreditation))
         .route("/accreditation/{accreditation_id}", patch(update_accreditation))
         .route("/accreditation/{accreditation_id}", delete(delete_accreditation))
+        .route("/accreditation/{accreditation_id}/stats", get(get_one_accreditation_stats))
+        .route("/accreditation/{accreditation_id}/indicator/stats", get(get_all_indicator_stats))
+        .route("/accreditation/stats", get(get_all_accreditation_stats))
         
         .route("/accreditation/indicator/{indicator_id}", get(get_indicator_detail))
         .route("/accreditation/indicator",get(search_indicator))
         .route("/accreditation/indicator",post(create_indicator))
         .route("/accreditation/indicator/{indicator_id}", patch(update_indicator))
         .route("/accreditation/indicator/{indicator_id}", delete(delete_indicator))
-        
+        .route("/accreditation/indicator/{indicator_id}/stats", get(get_one_indicator_stats))
+
         .route("/accreditation/indicator/rule/{rule_id}", get(get_calculation_detail))
         .route("/accreditation/indicator/rule",get(search_calculation))
         .route("/accreditation/indicator/rule",post(create_calculation))

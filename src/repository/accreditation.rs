@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{domain::repository::AccreditationTrait, models::accreditation::{Accreditation, AccreditationCreate, AccreditationUpdate}};
+use crate::{domain::repository::AccreditationTrait, models::accreditation::{Accreditation, AccreditationCreate, AccreditationStatistics, AccreditationUpdate}};
 
 pub struct AccreditationRepository {
     pool: PgPool,
@@ -80,6 +80,27 @@ impl AccreditationTrait for AccreditationRepository {
         )
         .bind(accreditation_id)
         .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn one_stats(&self, accreditation_id: Uuid)-> Result<AccreditationStatistics, sqlx::Error> {
+        sqlx::query_as::<_,AccreditationStatistics>(
+            r#"
+            SELECT * FROM accreditation_statistics WHERE accreditation_id = $1
+            "#
+        )
+        .bind(accreditation_id)
+        .fetch_one(&self.pool)
+        .await
+    }
+
+    async fn all_stats(&self)-> Result<Vec<AccreditationStatistics>, sqlx::Error> {
+        sqlx::query_as::<_,AccreditationStatistics>(
+            r#"
+            SELECT * FROM accreditation_statistics
+            "#
+        )
+        .fetch_all(&self.pool)
         .await
     }
 }
