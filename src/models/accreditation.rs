@@ -14,7 +14,7 @@ pub enum AccreditationCriteria{
     QualityCulture,
     EducationRelevance,
     ResearchRelevance,
-    ComunityServiceRelevance,
+    CommunityServiceRelevance,
     Accountability,
     MissionDifferentiation,
 }
